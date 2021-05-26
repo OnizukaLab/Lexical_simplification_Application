@@ -1,0 +1,4 @@
+Django
+
+#PostgreSQLへ接続するためのドライバ
+psycopg2

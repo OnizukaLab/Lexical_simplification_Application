@@ -1,0 +1,20 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Paraphrasing</title>
+    <link rel="stylesheet" type="text/css" href="{% static 'board/css/style.css' %}">
+</head>
+<body>
+    <h1>Paraphrasing</h1>
+    <form method="post" action="{% url 'form' %}">
+    {% csrf_token %}
+    <textarea name="msg" id=msg rows="4" cols="40" placeholder="Please input a word"></textarea><br>
+    <input type="submit" value="Input">
+    </form>
+    <p>{{msg1}}</p>
+    <p>{{msg2}}</p>	
+</body>
+</html>
