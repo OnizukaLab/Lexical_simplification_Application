@@ -10,22 +10,22 @@
 <body>
     <h1>Paraphrasing</h1>
     <form method="post" action="{% url 'form' %}">
-    {% csrf_token %}
-    <textarea name="msg" id=msg rows="4" cols="40" placeholder="Please input a word"></textarea><br>
-    <input type="submit" value="Input">
+        {% csrf_token %}
+        <textarea name="msg" id="msg" rows="4" cols="40" placeholder="Please input a word"></textarea><br>
+        <input type="submit" value="Input">
     </form>
+    <p class="msg_highlight">{{msg1}}</p>
     <p class="controlpane">
         <input type="button" value="ハイライトON/OFF" id="btn-onoff">
     </p>
-    <p>{{msg1}}</p>
-    <p>{{msg2}}</p>	
+    <p>{{result}}</p>	
 
 
 <script>
 
 
 {% autoescape off %}
-var highlight_word = {{highlight_word_list}};
+var highlight_words_list = {{highlight_words_list}};
 {% endautoescape %}
 //参考：https://www.nishishi.com/javascript-tips/auto-word-highlighter.html
 // ▼①元のHTMLソースを保持しておく変数
@@ -40,19 +40,21 @@ function replacer( str, word , att  ) {
 }
 // ▼③ハイライトを加える処理
 function addhighlight() {
-    backupOriginal = document.getElementById("msg").innerHTML;
+    backupOriginal = document.getElementById("msg_highlight").value;
     var forShow = backupOriginal;
-    for(let i=0;i<highlight_word.length;i++){
-        forShow = replacer( forShow, highlight_word[i], "mark1" );
+    for(let i=0;i<highlight_words_list.length;i++){
+        forShow = replacer( forShow, highlight_words_list[i], "mark1" );
     }
+    // hard cord
     forShow = replacer( forShow, "highlight", "mark1" );
     forShow = replacer( forShow, "文章", "mark2" );
     forShow = replacer( forShow, "表示", "mark3" );
-    document.getElementById("msg").innerHTML = forShow;
+    //
+    document.getElementById("msg_highlight").value = forShow;
 }
 // ▼④ハイライトを消す処理
 function clearhighlight() {
-    document.getElementById("msg").innerHTML = backupOriginal;  // バックアップから書き戻す
+    document.getElementById("msg_highlight").value = backupOriginal;  // バックアップから書き戻す
     backupOriginal = "";    // バックアップを消す
 }
 // ▼⑤ハイライトを加えるか消すかを判断
@@ -68,6 +70,25 @@ function highlightcheck() {
 }
 // ▼⑥ボタンクリックイベントに、上記の関数を割り当てる
 document.getElementById("btn-onoff").onclick  = highlightcheck;
+
+// ************************
+/*
+var backupOriginal = document.getElementById("msg").innerHTML;
+var forShow = backupOriginal;
+var highlight_class = "mark1"
+
+var addHighlightClass = (target_str, highlight_word_str, class_name) => {
+    var ResString = target_str.replace(highlight_word_str, '<span class=\"' + class_name + '\">' + highlight_word_str +'</span>')
+    return ResString
+}
+
+var addHilight = (target_str, highlight_words_list, highlight_class) => {
+    for(var i=1; i<highlight_words_list.length; i++){
+        target_str = replacer(target_str, highlight_words_list[i], highlight_class)
+    }
+}
+*/
+
 </script>
 </body>
 </html>

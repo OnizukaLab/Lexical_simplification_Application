@@ -7,19 +7,19 @@ from gensim.models import Word2Vec
 def index(request):
     params= {
         'msg1':'',
-        'msg2':'',
+        'result':'',
         'highlight_word':[],
     }
     return render(request, 'board/index.html', params)
 
 def form(request):
     msg = request.POST['msg']
-    msg2 = paraphrasing(msg)
-    highlight_word_list=[] # list of words that can be paraphrased
+    result = paraphrasing(msg)
+    highlight_words_list=[] # list of words that can be paraphrased
     params= {
         'msg1':'Your Input: '+msg,
-        'msg2':'Synonyms: '+msg2,
-        'highlight_word_list':highlight_word_list,
+        'result':'Synonyms: '+result,
+        'highlight_words_list':highlight_words_list,
         }
     return render(request, 'board/index.html', params)
 
