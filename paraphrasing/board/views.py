@@ -14,11 +14,11 @@ def index(request):
 
 def form(request):
     msg = request.POST['msg']
-    result = paraphrasing(msg)
-    highlight_words_list=[] # list of words that can be paraphrased
+    #result = paraphrasing(msg)
+    highlight_words_list=["University"] # list of words that can be paraphrased
     params= {
         'msg1':'Your Input: '+msg,
-        'result':'Synonyms: '+result,
+        #'result':'Synonyms: '+result,
         'highlight_words_list':highlight_words_list,
         }
     return render(request, 'board/index.html', params)

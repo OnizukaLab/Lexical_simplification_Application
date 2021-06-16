@@ -8,26 +8,41 @@
     <link rel="stylesheet" type="text/css" href="{% static 'board/css/style.css' %}">
 </head>
 <body>
-    <h1>Paraphrasing</h1>
-    <form method="post" action="{% url 'form' %}">
-        {% csrf_token %}
-        <textarea name="msg" id="msg" rows="4" cols="40" placeholder="Please input a word"></textarea><br>
-        <input type="submit" value="Input">
-    </form>
-    <p class="msg_highlight">{{msg1}}</p>
-    <p class="controlpane">
-        <input type="button" value="ハイライトON/OFF" id="btn-onoff">
-    </p>
-    <p>{{result}}</p>	
-
+    <div class="hero-header">
+        <div class="wrap">
+            <h1 class="hero-header_visual">
+                <p>Paraphrasing</p>
+            </h1>
+        </div>
+    </div>
+    <div class="contents">
+    <div class="wrap">
+        <div class="wrap_outer">
+            <div class="wrap_inner">
+            <form method="post" action="{% url 'form' %}">
+                {% csrf_token %}
+                文章を入力．
+                <br/>
+                <textarea name="msg" id="msg" rows="4" cols="40" placeholder="Please input a word"></textarea><br>
+                <input type="submit" value="Input">
+            </form>
+            </div>
+        </div>
+        <br/>
+        <div class="wrap_outer">
+            <div class="wrap_inner">
+            <p id="msg_highlight">{{msg1}}</p>
+            <p class="controlpane">
+                <input type="button" value="ハイライトONにする" id="btn-onoff">
+            </p>
+            <p>{{result}}</p>	
+            </div>
+        </div>
+    </div>
+    </div>
 
 <script>
 
-
-{% autoescape off %}
-var highlight_words_list = {{highlight_words_list}};
-{% endautoescape %}
-//参考：https://www.nishishi.com/javascript-tips/auto-word-highlighter.html
 // ▼①元のHTMLソースを保持しておく変数
 var backupOriginal = "";
 // ▼②文字列を検索してハイライト用要素を加える処理
@@ -40,21 +55,19 @@ function replacer( str, word , att  ) {
 }
 // ▼③ハイライトを加える処理
 function addhighlight() {
-    backupOriginal = document.getElementById("msg_highlight").value;
+    backupOriginal = document.getElementById("msg_highlight").innerHTML;
     var forShow = backupOriginal;
-    for(let i=0;i<highlight_words_list.length;i++){
-        forShow = replacer( forShow, highlight_words_list[i], "mark1" );
-    }
-    // hard cord
-    forShow = replacer( forShow, "highlight", "mark1" );
+    forShow = replacer( forShow, "ハイライト", "mark1" );
+    forShow = replacer( forShow, "University", "mark1" );
     forShow = replacer( forShow, "文章", "mark2" );
+    forShow = replacer( forShow, "highlight", "mark2" );
     forShow = replacer( forShow, "表示", "mark3" );
-    //
-    document.getElementById("msg_highlight").value = forShow;
+    forShow = replacer( forShow, "Osaka", "mark3" );
+    document.getElementById("msg_highlight").innerHTML = forShow;
 }
 // ▼④ハイライトを消す処理
 function clearhighlight() {
-    document.getElementById("msg_highlight").value = backupOriginal;  // バックアップから書き戻す
+    document.getElementById("msg_highlight").innerHTML = backupOriginal;  // バックアップから書き戻す
     backupOriginal = "";    // バックアップを消す
 }
 // ▼⑤ハイライトを加えるか消すかを判断
@@ -70,6 +83,74 @@ function highlightcheck() {
 }
 // ▼⑥ボタンクリックイベントに、上記の関数を割り当てる
 document.getElementById("btn-onoff").onclick  = highlightcheck;
+/*
+
+{% autoescape off %}
+var highlight_words_list = {{highlight_words_list}};
+{% endautoescape %}
+//参考：https://www.nishishi.com/javascript-tips/auto-word-highlighter.html
+// ▼①元のHTMLソースを保持しておく変数
+var backupOriginal = "";
+var target_id = "msg_highlight2";
+var push_flg1 = 0;
+// ▼②文字列を検索してハイライト用要素を加える処理
+function replacer( str, word , att  ) {
+    var SearchString = '(' + word + ')';
+    var RegularExp = new RegExp( SearchString, "g" );
+    var ReplaceString = '<span class="' + att + '">$1</span>';
+    var ResString = str.replace( RegularExp , ReplaceString );
+    return ResString;
+}
+// ▼③ハイライトを加える処理
+function addhighlight() {
+    backupOriginal = document.getElementById(target_id).value;
+    var forShow = backupOriginal;
+    for(let i=0;i<highlight_words_list.length;i++){
+        forShow = replacer( forShow, highlight_words_list[i], "mark1" );
+    }
+    // hard cord
+    forShow = replacer( forShow, "highlight", "mark1" );
+    forShow = replacer( forShow, "文章", "mark2" );
+    forShow = replacer( forShow, "表示", "mark3" );
+    //
+    document.getElementById(target_id).value = forShow;
+}
+// ▼④ハイライトを消す処理
+function clearhighlight() {
+    document.getElementById(target_id).value = backupOriginal;  // バックアップから書き戻す
+    backupOriginal = "";    // バックアップを消す
+}
+// ▼⑤ハイライトを加えるか消すかを判断
+function highlightcheck() {
+    if( backupOriginal.length == 0 ) {
+        // 何もバックアップされていなければ（未ハイライトなので）ハイライトを加える
+        addhighlight();
+    }
+    else {
+        // 何かバックアップされていれば（ハイライト済みなので）ハイライトを消す
+        clearhighlight();
+    }
+    push_flg1 = (push_flg1 + 1) % 2;
+    setCurrentValue1(push_flg1);
+}
+// ▼⑥ボタンクリックイベントに、上記の関数を割り当てる
+document.getElementById("btn-onoff").onclick  = highlightcheck;
+
+
+
+
+var inputElem1 = document.getElementById('btn-onoff');
+var setCurrentValue1 = (push_flg1) => {
+    if(push_flg1 ==0){
+        inputElem1.value = "ハイライトONにする";
+    }else{
+        inputElem1.value = "ハイライトOFFにする";
+    }
+}
+setCurrentValue1(push_flg1);
+
+*/
+
 
 // ************************
 /*
