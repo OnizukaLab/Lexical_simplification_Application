@@ -9,6 +9,27 @@ from transformers import BertTokenizer, BertForMaskedLM
 import matplotlib.pyplot as plt
 
 # Create your models here.
+wget http://www.thespermwhale.com/jaseweston/babi/CBTest.tgz
+tar -xzf ./CBTest.tgz
+DATA_PATH=./CBTest/data; cat ${DATA_PATH}/cbt_train.txt ${DATA_PATH}/cbt_valid.txt ${DATA_PATH}/cbt_test.txt > ./cbt_all.txt
+
+#@title Build a table of word frequency
+def count_lines(path):
+  with open(path, 'r') as f:
+    return sum([1 for _ in f])
+
+word_frequency = Counter()
+filepath = './cbt_all.txt'
+n_lines = count_lines(filepath)
+with open(filepath, 'r') as f:
+  for line in tqdm(f, total=n_lines):
+    if line.startswith("_BOOK_TITLE_"):
+      continue
+    else:
+      tokens = tokenizer.tokenize(line.rstrip())
+      for token in tokens:
+        word_frequency[token] += 1
+        
 def model():
     tokenizer = BertTokenizer.from_pretrained('bert-base-uncased')
     model = BertForMaskedLM.from_pretrained('bert-base-uncased')
