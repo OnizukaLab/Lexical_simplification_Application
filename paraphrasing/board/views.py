@@ -3,6 +3,8 @@ from django.http import HttpResponse
 import gensim.downloader
 from gensim.models import Word2Vec
 
+msg_saved= ""
+
 # Create your views here.
 def index(request):
     params= {
@@ -13,9 +15,15 @@ def index(request):
     return render(request, 'board/index.html', params)
 
 def form(request):
-    msg = request.POST['msg']
+    if "change" in request.POST:
+        msg = "The cat perched on the mat."
+        msg = msg.replace("perched", "sat")
+    else:
+        msg = request.POST['msg']
+        msg_saved = msg
+    
     #result = paraphrasing(msg)
-    highlight_words_list=["University"] # list of words that can be paraphrased
+    highlight_words_list=["purched"] # list of words that can be paraphrased
     params= {
         'msg1':'Your Input: '+msg,
         #'result':'Synonyms: '+result,

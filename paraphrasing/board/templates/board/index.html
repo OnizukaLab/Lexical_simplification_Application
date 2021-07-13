@@ -33,8 +33,12 @@
             <div class="wrap_inner">
             <p id="msg_highlight">{{msg1}}</p>
             <p class="controlpane">
-                <input type="button" value="ハイライトONにする" id="btn-onoff">
+                <!--<input type="button" value="ハイライトONにする" id="btn-onoff">-->
             </p>
+            <form action="{% url 'form' %}" method='POST'>
+                {% csrf_token %}
+                <input type="submit" name="change" value="置き換え"> 
+            </form>
             <p>{{result}}</p>	
             </div>
         </div>
@@ -82,8 +86,17 @@ function highlightcheck() {
     }
 }
 // ▼⑥ボタンクリックイベントに、上記の関数を割り当てる
-document.getElementById("btn-onoff").onclick  = highlightcheck;
+//document.getElementById("btn-onoff").onclick  = highlightcheck;
+
+
+backupOriginal = document.getElementById("msg_highlight").innerHTML;
+var forShow = backupOriginal;
+forShow = replacer( forShow, "perched", "mark1" );
+forShow = replacer( forShow, "sat", "mark1" );
+document.getElementById("msg_highlight").innerHTML = forShow;
+
 /*
+
 
 {% autoescape off %}
 var highlight_words_list = {{highlight_words_list}};
