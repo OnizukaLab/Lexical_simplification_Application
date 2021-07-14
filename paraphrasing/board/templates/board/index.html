@@ -8,6 +8,69 @@
     <link rel="stylesheet" type="text/css" href="{% static 'board/css/style.css' %}">
 </head>
 <body>
+
+    <style type="text/css">
+        body {
+            background-color: #f4f5f8;
+            font-family: "Helvetica Neue","Segoe UI", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
+            word-wrap: break-word;
+        }
+        header{
+            display: block;
+            height: 72px;
+            border: none;
+        }
+
+        .hero-header{
+            padding: 0.7rem 0; 
+            border-bottom: 1px solid #55575a;
+        }
+
+        .hero-header_visual{
+            text-align: center;
+        }
+        .contents{
+            padding: 2.5rem 0;
+            font-size: 18px;
+            text-align: center;
+        }
+
+        .wrap{
+            margin: auto;
+            width: 70%;
+            text-align: left;
+        }
+
+        .wrap_outer{
+            background-color: white;
+            box-shadow: 0 2px 3px rgb(0 0 0 / 10%);
+        }
+        .wrap_inner{
+            background-color: white;
+            padding: 2.0rem;
+        }
+
+        /* ▼対象文章枠の装飾（任意） */
+        #msg_highlight {
+            border: 2px solid #0a0;  /* 枠線 */
+            border-radius: 0.67em;   /* 角丸 */
+            padding: 0.5em;          /* 内側余白 */
+            width: 90%;             /* 横幅 */
+            box-sizing: border-box;  /* はみ出しを防ぐ対策 */
+            background-color: #fff;  /* 背景色 */
+            line-height: 1.6;        /* 行の高さ */
+        }
+        /* ▼ハイライトON/OFFボタン枠の装飾（任意） */
+        .controlpanel {
+            margin: 1em 0;           /* 外側余白 */
+            padding: 1em;            /* 内側余白 */
+            background-color: #eee;  /* 背景色 */
+        }
+        /* ▼ハイライト部分の装飾 */
+        span.mark1 { background-color: yellow; } /* 黄色ハイライト用 */
+        span.mark2 { background-color: lime; }   /* 緑色ハイライト用 */
+        span.mark3 { background-color: #0ff; }   /* 水色ハイライト用 */
+    </style>
     <div class="hero-header">
         <div class="wrap">
             <h1 class="hero-header_visual">

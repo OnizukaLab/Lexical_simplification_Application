@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import HttpResponse
 import gensim.downloader
 from gensim.models import Word2Vec
+from .models import CurrentInput
 
 msg_saved= ""
 
@@ -16,11 +17,17 @@ def index(request):
 
 def form(request):
     if "change" in request.POST:
-        msg = "The cat perched on the mat."
-        msg = msg.replace("perched", "sat")
+        msg = CurrentInput.objects.all()[0].contents
+        #msg = "The cat perched on the mat."
+        sample_word = "perched"
+        sample_word2 = "sat"
+        #sample_word2 = paraphrasing(sample_word)
+        msg = msg.replace(sample_word, sample_word2)
     else:
         msg = request.POST['msg']
-        msg_saved = msg
+        new_input = CurrentInput(contents=msg)
+        new_input.save()
+
     
     #result = paraphrasing(msg)
     highlight_words_list=["purched"] # list of words that can be paraphrased
