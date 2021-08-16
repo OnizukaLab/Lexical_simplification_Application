@@ -14,6 +14,23 @@ Requirementで列挙したライブラリなどのインストール方法
  
 ```
 pip install django
+pip install numpy
+pip install torch
+pip install openpyxl
+pip install scipy
+pip install nltk
+pip install tqdm
+pip install pathlib
+pip install sklearn
+```
+
+# Additional Files
+
+BERT-LSを使うために、このファイルをダウンロードし、BERT_Resourcesに置く
+
+```
+crawl-300d-2M-subword.vec: https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-subword.zip
+ppdb-2.0-tldr from: http://paraphrase.org/#/download
 ```
  
 # Usage
