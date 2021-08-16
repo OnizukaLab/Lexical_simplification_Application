@@ -2,3 +2,9 @@ Django
 
 #PostgreSQLへ接続するためのドライバ
 psycopg2
+
+crawl-300d-2M-subword.vec from:
+https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-subword.zip
+
+ppdb-2.0-tldr from:
+http://paraphrase.org/#/download
