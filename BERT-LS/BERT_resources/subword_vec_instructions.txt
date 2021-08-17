@@ -1,1 +1,0 @@
-You must download crawl-300d-2M-subword.vec and place it in this directory using this link: https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-subword.zip
