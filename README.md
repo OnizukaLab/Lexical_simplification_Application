@@ -36,6 +36,7 @@ BERT-LSを使うために、このファイルをダウンロードし、BERT_Re
 ```
 crawl-300d-2M-subword.vec: https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-subword.zip
 ppdb-2.0-tldr from: http://paraphrase.org/#/download
+gpu_attention_model from: https://github.com/siangooding/lexical_simplification/blob/master/gpu_attention.model
 ```
  
 # Usage
