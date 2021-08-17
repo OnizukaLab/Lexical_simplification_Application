@@ -22,6 +22,11 @@ pip install nltk
 pip install tqdm
 pip install pathlib
 pip install sklearn
+pip install spacy
+python -m spacy download en_core_web_sm
+pip install tensorflow
+pip install inflect
+pip install truecase
 ```
 
 # Additional Files
@@ -50,3 +55,21 @@ http://127.0.0.1:8000/
 http://127.0.0.1:8000/board　
 
 へ変更し、実行する。
+
+#Citations
+
+[BERT-LS](https://arxiv.org/pdf/1907.06226.pdf)
+
+```
+@article{qiang2020BERTLS,
+  title =  {Lexical Simplification with Pretrained Encoders },
+  author = {Qiang, Jipeng and 
+            Li, Yun and
+            Yi, Zhu and
+            Yuan, Yunhao and 
+            Wu, Xindong},
+  journal={Thirty-Fourth AAAI Conference on Artificial Intelligence},
+  pages={8649–8656},
+  year  =  {2020}
+}
+```
