@@ -57,7 +57,7 @@ http://127.0.0.1:8000/board　
 
 へ変更し、実行する。
 
-#Citations
+# Citations
 
 [BERT-LS](https://arxiv.org/pdf/1907.06226.pdf)
 
