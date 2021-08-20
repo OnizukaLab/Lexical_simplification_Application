@@ -1,5 +1,12 @@
 #!/usr/bin/python
 # -*- coding: UTF-8 -*-
+
+"""
+他のファイルで使いたいなら：
+from run_bert import BERT_LS
+bert = BERT_LS()
+bert.simplify("文字列")
+"""
 import argparse
 import csv
 import os
@@ -642,21 +649,33 @@ def run_simplification(one_sent, model, tokenizer, ranker, max_seq_length=250, t
 
     return ss
 
-if __name__ == "__main__":
-    device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    model = BertForMaskedLM.from_pretrained('bert-base-uncased')
-    model.to(device)
-    tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
-    ppdb = "BERT_resources/ppdb-2.0-tldr"
-    word_embeddings = "BERT_resources/crawl-300d-2M-subword.vec"
-    word_frequency = "BERT_resources/SUBTLEX_frequency.xlsx"
-    ranker = Ranker()
-    ranker.read_features(word_embeddings, word_frequency, ppdb)
-    max_seq_length = 250
-    threshold = 0.5
-    num_selections = 20
+class BERT_LS:
+    def __init__(self):
+        device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        self.model = model = BertForMaskedLM.from_pretrained('bert-base-uncased')
+        self.model.to(device)
+        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+        ppdb = "BERT_resources/ppdb-2.0-tldr"
+        word_embeddings = "BERT_resources/crawl-300d-2M-subword.vec"
+        word_frequency = "BERT_resources/SUBTLEX_frequency.xlsx"
+        self.ranker = Ranker()
+        self.ranker.read_features(word_embeddings, word_frequency, ppdb)
+        self.max_seq_length = 250
+        self.threshold = 0.5
+        self.num_selections = 20
 
+    def simplify(self, sentence):
+        return run_simplification(
+                sentence, 
+                self.model, 
+                self.tokenizer,
+                self.ranker, 
+                self.max_seq_length, 
+                self.threshold, 
+                self.num_selections)
+
+if __name__ == "__main__":
+    bert = BERT_LS()
     sentence = input("Enter a sentence: ")
     print("Simplified sentence:")
-    print(run_simplification(sentence, model, tokenizer, 
-            ranker, max_seq_length, threshold, num_selections))
+    print(bert.simplify(sentence))

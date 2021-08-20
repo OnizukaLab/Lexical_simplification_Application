@@ -6,4 +6,5 @@ of	N
 who	N
 wrote	N
 this	N
-story	N
+book	N
+.	N
