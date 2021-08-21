@@ -649,6 +649,20 @@ def run_simplification(one_sent, model, tokenizer, ranker, max_seq_length=250, t
 
     return ss
 
+def list_replacements(word, sentence, model, tokenizer, ranker, max_seq_length, threshold = 0.5, num_selections=10, ignore_list = []):
+    tokens, words, positions = convert_sentence_to_token(sentence, max_seq_length, tokenizer)
+    tokenized = nltk.word_tokenize(sentence)
+    index = words.index(word)
+    cgBERT = candidate_generation(model, tokenizer, tokens, tokenized, index, positions, max_seq_length, ranker.ps, num_selections)
+    
+    mask_context = extract_context(tokenized,index,11)
+    words_tag = nltk.pos_tag(tokenized)
+    complex_word_tag = words_tag[index][1]
+    complex_word_tag = preprocess_tag(complex_word_tag)
+    cgPPDB = ranker.ppdb.predict(tokenized[index],complex_word_tag)
+
+    return substitution_ranking(tokenized[index], mask_context, cgBERT, cgPPDB, ranker, tokenizer, model)
+
 class BERT_LS:
     def __init__(self):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -672,6 +686,17 @@ class BERT_LS:
                 self.ranker, 
                 self.max_seq_length, 
                 self.threshold, 
+                self.num_selections)
+
+    def replacement_list(self, word, sentence):
+        return list_replacements(
+                word,
+                sentence,
+                self.model,
+                self.tokenizer,
+                self.ranker,
+                self.max_seq_length,
+                self.threshold,
                 self.num_selections)
 
 if __name__ == "__main__":
