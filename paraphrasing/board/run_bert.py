@@ -2,10 +2,11 @@
 # -*- coding: UTF-8 -*-
 
 """
-他のファイルで使いたいなら：
+このファイルの使い方：
 from run_bert import BERT_LS
 bert = BERT_LS()
 bert.simplify("文字列")
+bert.replacement_list("言葉", "文字列")
 """
 import argparse
 import csv
@@ -409,7 +410,7 @@ def compute_context_sis_score(source_word, sis_context, substitution_selection, 
      
     return context_sis
 
-def substitution_ranking(source_word, source_context, substitution_selection, ssPPDB, ranker, tokenizer, maskedLM):
+def substitution_ranking(source_word, source_context, substitution_selection, ssPPDB, ranker, tokenizer, maskedLM, return_list=False):
 
     ss,sis_scores,count_scores=preprocess_SR(source_word, substitution_selection, ranker.fasttext_dico, ranker.fasttext_emb, ranker.word_count)
 
@@ -449,12 +450,12 @@ def substitution_ranking(source_word, source_context, substitution_selection, ss
 
     min_rank_index_list = map(all_ranks.index,heapq.nsmallest(len(all_ranks),all_ranks))
 
-
-
     rank_words = []
     for rank_index in list(min_rank_index_list):
         rank_words.append(ss[rank_index])
 
+    if return_list:
+        return rank_words
 
     pre_index = all_ranks.index(min(all_ranks))
 
@@ -480,7 +481,7 @@ def substitution_ranking(source_word, source_context, substitution_selection, ss
         pre_word = ss[pre_index]
     else:
         pre_word = source_word
-
+    
     return pre_word
 
 def extract_context(words, mask_index, window):
@@ -575,10 +576,7 @@ def candidate_generation(model, tokenizer, tokens, words, mask_index, positions,
                 #print(predicted_top[0].cpu().numpy())
     pre_tokens = tokenizer.convert_ids_to_tokens(predicted_top[1].cpu().numpy())
         
-    
-
     cgBERT = BERT_candidate_generation(words[mask_index], pre_tokens, predicted_top[0].cpu().numpy(), ps, num_selections)
-
     return cgBERT
 
 
@@ -661,7 +659,7 @@ def list_replacements(word, sentence, model, tokenizer, ranker, max_seq_length, 
     complex_word_tag = preprocess_tag(complex_word_tag)
     cgPPDB = ranker.ppdb.predict(tokenized[index],complex_word_tag)
 
-    return substitution_ranking(tokenized[index], mask_context, cgBERT, cgPPDB, ranker, tokenizer, model)
+    return substitution_ranking(tokenized[index], mask_context, cgBERT, cgPPDB, ranker, tokenizer, model, True)
 
 class BERT_LS:
     def __init__(self):
