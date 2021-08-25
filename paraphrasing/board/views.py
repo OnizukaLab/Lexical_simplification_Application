@@ -3,8 +3,11 @@ from django.http import HttpResponse
 import gensim.downloader
 from gensim.models import Word2Vec
 from .models import CurrentInput
+from run_bert import BERT_LS
 
 msg_saved= ""
+bert = BERT_LS()
+
 
 # Create your views here.
 def index(request):
@@ -22,6 +25,7 @@ def form(request):
         sample_word = "perched"
         sample_word2 = "sat"
         #sample_word2 = paraphrasing(sample_word)
+        sample_word2 = bert_ls(sample_word)
         msg = msg.replace(sample_word, sample_word2)
     else:
         msg = request.POST['msg']
@@ -44,3 +48,9 @@ def paraphrasing(msg):
     sentenses = model.most_similar(msg)
     sentense = sentenses[0][0]
     return sentense
+
+def bert_ls(msg):
+    output = bert.simplify(msg)
+    return output
+
+    
