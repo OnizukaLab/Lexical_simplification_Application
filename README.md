@@ -7,6 +7,17 @@
  
 python 3
 django 3.2.3 
+
+BERT-LSを使うために、このファイルをダウンロードし、BERT_Resourcesに置く
+
+crawl-300d-2M-subword.vec: 
+https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-subword.zip
+
+ppdb-2.0-tldr:
+http://paraphrase.org/#/download
+
+gpu_attention_model: 
+https://github.com/siangooding/lexical_simplification/blob/master/gpu_attention.model
  
 # Installation
  
@@ -28,19 +39,6 @@ pip install tensorflow
 pip install inflect
 pip install truecase
 ```
-
-# Additional Files
-
-BERT-LSを使うために、このファイルをダウンロードし、BERT_Resourcesに置く
-
-crawl-300d-2M-subword.vec: 
-https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-subword.zip
-
-ppdb-2.0-tldr:
-http://paraphrase.org/#/download
-
-gpu_attention_model: 
-https://github.com/siangooding/lexical_simplification/blob/master/gpu_attention.model
  
 # Usage
  
