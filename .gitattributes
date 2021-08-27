@@ -1,2 +1,0 @@
-*vec filter=lfs diff=lfs merge=lfs -text
-ppdb-2.0-tldr filter=lfs diff=lfs merge=lfs -text
