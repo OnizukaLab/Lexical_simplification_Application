@@ -1,3 +1,4 @@
 *.vec
 *-tldr
 *.model
+__pycache__/
