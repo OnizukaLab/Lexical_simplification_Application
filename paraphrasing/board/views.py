@@ -13,33 +13,40 @@ bert = BERT_LS()
 def index(request):
     params= {
         'msg1':'',
+        'msg2':'',
         'result':'',
         'highlight_word':[],
     }
     return render(request, 'board/index.html', params)
 
 def form(request):
+    
+    msg1 = CurrentInput.objects.all()[0].contents
+    #msg = "The cat perched on the mat."
+    try:
+        msg2 = bert_ls(msg1)
+    except:
+        msg2=""
+    """
     if "change" in request.POST:
         msg1 = CurrentInput.objects.all()[0].contents
         #msg = "The cat perched on the mat."
-        """
         sample_word = "perched"
         sample_word2 = "sat"
         #sample_word2 = paraphrasing(sample_word)
         msg = msg.replace(sample_word, sample_word2)
-        """
-        msg2 = bert_ls(msg1)
     else:
         msg1 = request.POST['msg']
         new_input = CurrentInput(contents=msg1)
         new_input.save()
+    """
 
     
     #result = paraphrasing(msg)
     highlight_words_list=["purched"] # list of words that can be paraphrased
     params= {
         'msg1':'Your Input: '+msg1,
-        'msg2':'Replaced: '+msg2,
+        'msg2':'Paraphrased: '+msg2,
         #'result':'Synonyms: '+result,
         'highlight_words_list':highlight_words_list,
         }
