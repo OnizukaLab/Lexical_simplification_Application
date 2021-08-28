@@ -25,9 +25,9 @@ Requirementで列挙したライブラリなどのインストール方法
  
 ```
 pip install django
-pip install numpy
 pip install torch
 pip install openpyxl
+pip install numpy
 pip install scipy
 pip install nltk
 pip install tqdm
@@ -38,6 +38,7 @@ python -m spacy download en_core_web_sm
 pip install tensorflow
 pip install inflect
 pip install truecase
+pip install boto3
 ```
  
 # Usage
