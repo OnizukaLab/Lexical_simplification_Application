@@ -1,8 +1,4 @@
 from django.shortcuts import render
-from django.http import HttpResponse
-import gensim.downloader
-from gensim.models import Word2Vec
-from .models import CurrentInput
 from run_bert import BERT_LS
 
 msg_saved= ""
