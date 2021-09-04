@@ -21,9 +21,8 @@
             <div class="wrap_inner">
             <form method="post" action="{% url 'form' %}">
                 {% csrf_token %}
-                文章を入力．
-                <br/>
-                <textarea name="input_str" id="input_str" rows="4" cols="40" placeholder="Please input a word">{{input_str}}</textarea><br>
+                Input
+                <textarea name="input_str" id="input_str" rows="4" cols="40" placeholder="Please input a sentence">{{input_str}}</textarea>
                 <input type="submit" value="Input">
             </form>
             </div>
@@ -31,6 +30,7 @@
         <br/>
         <div class="wrap_outer">
             <div class="wrap_inner">
+            Output
             <p id="msg_highlight">{{output_str}}</p>
             <p class="controlpane">
             <input type="button" value="ハイライトONにする" id="btn-onoff">
