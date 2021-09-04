@@ -49,9 +49,6 @@ textarea{
     padding: 2.0rem;
 }
 
-p{
-    vertical-align: baseline;
-}
 /* ▼対象文章枠の装飾（任意） */
 #msg_highlight {
     border: 2px solid gray;  /* 枠線 */
