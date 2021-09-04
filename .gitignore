@@ -3,8 +3,4 @@
 *.model
 .vscode/
 __pycache__/
-<<<<<<< HEAD
 .DS_Store/
-=======
-.DS_Store/
->>>>>>> 56879500e9a169e557cd1a59fb5641b9670ded59
