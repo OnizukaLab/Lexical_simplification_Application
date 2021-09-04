@@ -55,6 +55,14 @@ header{
     background-color: #eee;  /* 背景色 */
 }
 /* ▼ハイライト部分の装飾 */
-span.mark1 { background-color: yellow; } /* 黄色ハイライト用 */
-span.mark2 { background-color: lime; }   /* 緑色ハイライト用 */
-span.mark3 { background-color: #0ff; }   /* 水色ハイライト用 */
+span.mark { 
+    background-color: yellow; 
+} /* ハイライトの色指定 */
+
+/* ▼ハイライト部分の装飾 */
+span.mark2 { 
+    margin: 1em 0.2em;           /* 外側余白 */
+    padding: 0.2em;            /* 内側余白 */
+    background-color: white; 
+    box-shadow: 0 4px 4px rgb(0 0 0 / 20%);
+} /* ハイライトの色指定 */
