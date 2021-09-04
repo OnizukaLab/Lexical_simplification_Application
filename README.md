@@ -8,6 +8,12 @@
 python 3
 django 3.2.3 
 
+NLTK - punkt:
+```
+import nltk
+nltk.download('punkt')
+```
+
 BERT-LSを使うために、このファイルをダウンロードし、BERT_Resourcesに置く
 
 crawl-300d-2M-subword.vec: 
@@ -18,7 +24,7 @@ http://paraphrase.org/#/download
 
 gpu_attention_model: 
 https://github.com/siangooding/lexical_simplification/blob/master/gpu_attention.model
- 
+
 # Installation
  
 Requirementで列挙したライブラリなどのインストール方法
