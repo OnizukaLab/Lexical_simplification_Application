@@ -8,69 +8,6 @@
     <link rel="stylesheet" type="text/css" href="{% static 'board/css/style.css' %}">
 </head>
 <body>
-
-    <style type="text/css">
-        body {
-            background-color: #f4f5f8;
-            font-family: "Helvetica Neue","Segoe UI", Arial, "Hiragino Kaku Gothic ProN", "Hiragino Sans", Meiryo, sans-serif;
-            word-wrap: break-word;
-        }
-        header{
-            display: block;
-            height: 72px;
-            border: none;
-        }
-
-        .hero-header{
-            padding: 0.7rem 0; 
-            border-bottom: 1px solid #55575a;
-        }
-
-        .hero-header_visual{
-            text-align: center;
-        }
-        .contents{
-            padding: 2.5rem 0;
-            font-size: 18px;
-            text-align: center;
-        }
-
-        .wrap{
-            margin: auto;
-            width: 70%;
-            text-align: left;
-        }
-
-        .wrap_outer{
-            background-color: white;
-            box-shadow: 0 2px 3px rgb(0 0 0 / 10%);
-        }
-        .wrap_inner{
-            background-color: white;
-            padding: 2.0rem;
-        }
-
-        /* ▼対象文章枠の装飾（任意） */
-        #msg_highlight {
-            border: 2px solid #0a0;  /* 枠線 */
-            border-radius: 0.67em;   /* 角丸 */
-            padding: 0.5em;          /* 内側余白 */
-            width: 90%;             /* 横幅 */
-            box-sizing: border-box;  /* はみ出しを防ぐ対策 */
-            background-color: #fff;  /* 背景色 */
-            line-height: 1.6;        /* 行の高さ */
-        }
-        /* ▼ハイライトON/OFFボタン枠の装飾（任意） */
-        .controlpanel {
-            margin: 1em 0;           /* 外側余白 */
-            padding: 1em;            /* 内側余白 */
-            background-color: #eee;  /* 背景色 */
-        }
-        /* ▼ハイライト部分の装飾 */
-        span.mark1 { background-color: yellow; } /* 黄色ハイライト用 */
-        span.mark2 { background-color: lime; }   /* 緑色ハイライト用 */
-        span.mark3 { background-color: #0ff; }   /* 水色ハイライト用 */
-    </style>
     <div class="hero-header">
         <div class="wrap">
             <h1 class="hero-header_visual">
@@ -84,9 +21,8 @@
             <div class="wrap_inner">
             <form method="post" action="{% url 'form' %}">
                 {% csrf_token %}
-                文章を入力．
-                <br/>
-                <textarea name="msg" id="msg" rows="4" cols="40" placeholder="Please input a word"></textarea><br>
+                Input
+                <textarea name="input_str" id="input_str" rows="4" cols="40" placeholder="Please input a sentence">{{input_str}}</textarea>
                 <input type="submit" value="Input">
             </form>
             </div>
@@ -94,20 +30,16 @@
         <br/>
         <div class="wrap_outer">
             <div class="wrap_inner">
-            <p id="msg_highlight">{{msg1}}</p>
-            <p id="msg_replaced">{{msg2}}</p>
+            Output
+            <p id="msg_highlight">{{output_str}}</p>
             <p class="controlpane">
-                <!--<input type="button" value="ハイライトONにする" id="btn-onoff">-->
+            <input type="button" value="ハイライトONにする" id="btn-onoff">
             </p>
-            <form action="{% url 'form' %}" method='POST'>
-                {% csrf_token %}
-                <input type="submit" name="change" value="置き換え"> 
-            </form>
-            <p>{{result}}</p>	
             </div>
         </div>
     </div>
     </div>
+
 
 <script>
 
@@ -125,12 +57,8 @@ function replacer( str, word , att  ) {
 function addhighlight() {
     backupOriginal = document.getElementById("msg_highlight").innerHTML;
     var forShow = backupOriginal;
-    forShow = replacer( forShow, "ハイライト", "mark1" );
-    forShow = replacer( forShow, "University", "mark1" );
-    forShow = replacer( forShow, "文章", "mark2" );
-    forShow = replacer( forShow, "highlight", "mark2" );
-    forShow = replacer( forShow, "表示", "mark3" );
-    forShow = replacer( forShow, "Osaka", "mark3" );
+forShow = replacer( forShow, "perched", "mark" );
+forShow = replacer( forShow, "sat", "mark" );
     document.getElementById("msg_highlight").innerHTML = forShow;
 }
 // ▼④ハイライトを消す処理
@@ -150,102 +78,14 @@ function highlightcheck() {
     }
 }
 // ▼⑥ボタンクリックイベントに、上記の関数を割り当てる
-//document.getElementById("btn-onoff").onclick  = highlightcheck;
-
-
-backupOriginal = document.getElementById("msg_highlight").innerHTML;
-var forShow = backupOriginal;
-forShow = replacer( forShow, "perched", "mark1" );
-forShow = replacer( forShow, "sat", "mark1" );
-document.getElementById("msg_highlight").innerHTML = forShow;
-
-/*
-
-
-{% autoescape off %}
-var highlight_words_list = {{highlight_words_list}};
-{% endautoescape %}
-//参考：https://www.nishishi.com/javascript-tips/auto-word-highlighter.html
-// ▼①元のHTMLソースを保持しておく変数
-var backupOriginal = "";
-var target_id = "msg_highlight2";
-var push_flg1 = 0;
-// ▼②文字列を検索してハイライト用要素を加える処理
-function replacer( str, word , att  ) {
-    var SearchString = '(' + word + ')';
-    var RegularExp = new RegExp( SearchString, "g" );
-    var ReplaceString = '<span class="' + att + '">$1</span>';
-    var ResString = str.replace( RegularExp , ReplaceString );
-    return ResString;
-}
-// ▼③ハイライトを加える処理
-function addhighlight() {
-    backupOriginal = document.getElementById(target_id).value;
-    var forShow = backupOriginal;
-    for(let i=0;i<highlight_words_list.length;i++){
-        forShow = replacer( forShow, highlight_words_list[i], "mark1" );
-    }
-    // hard cord
-    forShow = replacer( forShow, "highlight", "mark1" );
-    forShow = replacer( forShow, "文章", "mark2" );
-    forShow = replacer( forShow, "表示", "mark3" );
-    //
-    document.getElementById(target_id).value = forShow;
-}
-// ▼④ハイライトを消す処理
-function clearhighlight() {
-    document.getElementById(target_id).value = backupOriginal;  // バックアップから書き戻す
-    backupOriginal = "";    // バックアップを消す
-}
-// ▼⑤ハイライトを加えるか消すかを判断
-function highlightcheck() {
-    if( backupOriginal.length == 0 ) {
-        // 何もバックアップされていなければ（未ハイライトなので）ハイライトを加える
-        addhighlight();
-    }
-    else {
-        // 何かバックアップされていれば（ハイライト済みなので）ハイライトを消す
-        clearhighlight();
-    }
-    push_flg1 = (push_flg1 + 1) % 2;
-    setCurrentValue1(push_flg1);
-}
-// ▼⑥ボタンクリックイベントに、上記の関数を割り当てる
 document.getElementById("btn-onoff").onclick  = highlightcheck;
+// ボタンを使わず置き換えたい場合は上の1行をコメントアウトし，下記のコメントアウトを外す
+//backupOriginal = document.getElementById("msg_highlight").innerHTML;
+//var forShow = backupOriginal;
+//forShow = replacer( forShow, "perched", "mark" );
+//forShow = replacer( forShow, "sat", "mark" );
+//document.getElementById("msg_highlight").innerHTML = forShow;
 
-
-
-
-var inputElem1 = document.getElementById('btn-onoff');
-var setCurrentValue1 = (push_flg1) => {
-    if(push_flg1 ==0){
-        inputElem1.value = "ハイライトONにする";
-    }else{
-        inputElem1.value = "ハイライトOFFにする";
-    }
-}
-setCurrentValue1(push_flg1);
-
-*/
-
-
-// ************************
-/*
-var backupOriginal = document.getElementById("msg").innerHTML;
-var forShow = backupOriginal;
-var highlight_class = "mark1"
-
-var addHighlightClass = (target_str, highlight_word_str, class_name) => {
-    var ResString = target_str.replace(highlight_word_str, '<span class=\"' + class_name + '\">' + highlight_word_str +'</span>')
-    return ResString
-}
-
-var addHilight = (target_str, highlight_words_list, highlight_class) => {
-    for(var i=1; i<highlight_words_list.length; i++){
-        target_str = replacer(target_str, highlight_words_list[i], highlight_class)
-    }
-}
-*/
 
 </script>
 </body>
