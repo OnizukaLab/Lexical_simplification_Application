@@ -9,6 +9,13 @@ header{
     border: none;
 }
 
+textarea{
+    resize: vertical;
+    width:100%;
+    min-height: 200px;
+    margin: 1.5em 0;           /* 外側余白 */
+}
+
 .hero-header{
     padding: 0.7rem 0; 
     border-bottom: 1px solid #55575a;
@@ -24,29 +31,37 @@ header{
 }
 
 .wrap{
+    display: table;
     margin: auto;
     width: 70%;
     text-align: left;
 }
 
 .wrap_outer{
+    display: table-cell;
     background-color: white;
     box-shadow: 0 2px 3px rgb(0 0 0 / 10%);
+    width: 48%;
+    position: relative;
 }
+
 .wrap_inner{
-    background-color: white;
     padding: 2.0rem;
 }
 
+p{
+    vertical-align: baseline;
+}
 /* ▼対象文章枠の装飾（任意） */
 #msg_highlight {
-    border: 2px solid #0a0;  /* 枠線 */
+    border: 2px solid gray;  /* 枠線 */
     border-radius: 0.67em;   /* 角丸 */
-    padding: 0.5em;          /* 内側余白 */
-    width: 90%;             /* 横幅 */
+    padding: 0;          /* 内側余白 */
+    width: 100%;             /* 横幅 */
     box-sizing: border-box;  /* はみ出しを防ぐ対策 */
     background-color: #fff;  /* 背景色 */
     line-height: 1.6;        /* 行の高さ */
+    min-height: 200px;
 }
 /* ▼ハイライトON/OFFボタン枠の装飾（任意） */
 .controlpanel {
