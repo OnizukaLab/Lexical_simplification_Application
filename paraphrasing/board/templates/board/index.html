@@ -19,11 +19,12 @@
     <div class="wrap">
         <div class="wrap_outer">
             <div class="wrap_inner">
-            <form method="post" action="{% url 'form' %}">
+            <!-- <form method="post" action="{% url 'form' %}"> -->
+            <form id="id_input_form" method="POST" action="{% url 'ajax_form' %}">
                 {% csrf_token %}
                 Input
-                <textarea name="input_str" id="input_str" rows="4" cols="40" placeholder="Please input a sentence">{{input_str}}</textarea>
-                <input type="submit" value="Input">
+                <textarea name="input_str" id="id_input_str" rows="4" cols="40" placeholder="Please input a sentence" onkeyup='document.getElementById("id_submit").click()'>{{input_str}}</textarea>
+                <input type="submit" value="Input" id="id_submit" style="display:none;">
             </form>
             </div>
         </div>
@@ -31,7 +32,7 @@
         <div class="wrap_outer">
             <div class="wrap_inner">
             Output
-            <p id="msg_highlight">{{output_str}}</p>
+            <p name="output_str" id="id_output_str">{{output_str}}</p>
             <p class="controlpane">
             <input type="button" value="ハイライトONにする" id="btn-onoff">
             </p>
@@ -55,15 +56,15 @@ function replacer( str, word , att  ) {
 }
 // ▼③ハイライトを加える処理
 function addhighlight() {
-    backupOriginal = document.getElementById("msg_highlight").innerHTML;
+    backupOriginal = document.getElementById("id_output_str").innerHTML;
     var forShow = backupOriginal;
-forShow = replacer( forShow, "perched", "mark" );
-forShow = replacer( forShow, "sat", "mark" );
-    document.getElementById("msg_highlight").innerHTML = forShow;
+    forShow = replacer( forShow, "perched", "mark" );
+    forShow = replacer( forShow, "sat", "mark" );
+    document.getElementById("id_output_str").innerHTML = forShow;
 }
 // ▼④ハイライトを消す処理
 function clearhighlight() {
-    document.getElementById("msg_highlight").innerHTML = backupOriginal;  // バックアップから書き戻す
+    document.getElementById("id_output_str").innerHTML = backupOriginal;  // バックアップから書き戻す
     backupOriginal = "";    // バックアップを消す
 }
 // ▼⑤ハイライトを加えるか消すかを判断
@@ -80,12 +81,32 @@ function highlightcheck() {
 // ▼⑥ボタンクリックイベントに、上記の関数を割り当てる
 document.getElementById("btn-onoff").onclick  = highlightcheck;
 // ボタンを使わず置き換えたい場合は上の1行をコメントアウトし，下記のコメントアウトを外す
-//backupOriginal = document.getElementById("msg_highlight").innerHTML;
+//backupOriginal = document.getElementById("id_output_str").innerHTML;
 //var forShow = backupOriginal;
 //forShow = replacer( forShow, "perched", "mark" );
 //forShow = replacer( forShow, "sat", "mark" );
-//document.getElementById("msg_highlight").innerHTML = forShow;
+//document.getElementById("id_output_str").innerHTML = forShow;
 
+// textareaに入力途中の内容も取得
+$('#id_input_form').on('submit', e => {
+    e.preventDefault();
+ 
+    $.ajax({
+      'url': '{% url "ajax_form" %}',
+      'type': 'POST',
+      'data': {
+        'input_str': $('#id_input_str').val(),
+      },
+      'dataType': 'json'
+    }).done(response => {
+      $('#id_output_str').empty();
+      $('#id_output_str').append({ text: response.output_str });
+    });
+});
+
+//$('#id_input_str').keyup(function() {
+//    $('#id_submit').click();
+//});
 
 </script>
 </body>
