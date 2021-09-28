@@ -677,20 +677,36 @@ class BERT_LS:
         self.num_selections = 20
         self.cache = {}
 
-    def simplify(self, sentence):
-        if sentence in self.cache:
-            return self.cache[sentence]
-        else:
-            simplified = run_simplification(
-                sentence, 
-                self.model, 
-                self.tokenizer,
-                self.ranker, 
-                self.max_seq_length, 
-                self.threshold, 
-                self.num_selections)
-            self.cache[sentence] = simplified
-            return simplified
+    def simplify(self, user_input):
+        sentences = re.split("([.?!])", user_input)
+        sentences.pop()
+        output = ""
+        is_first = True
+
+        for sentence in sentences:
+            if len(sentence) < 1 or not sentence:
+                continue
+            elif len(sentence) == 1:
+                output += sentence
+            elif sentence in self.cache:
+                if not is_first:
+                    output += " "
+                output += self.cache[sentence]
+            else:
+                simplified = run_simplification(
+                    sentence, 
+                    self.model, 
+                    self.tokenizer,
+                    self.ranker, 
+                    self.max_seq_length, 
+                    self.threshold, 
+                    self.num_selections)
+                self.cache[sentence] = simplified
+                if not is_first:
+                    output += " "
+                output += simplified
+            is_first = False
+        return output
 
     def replacement_list(self, word, sentence):
         return list_replacements(
@@ -705,7 +721,9 @@ class BERT_LS:
 
 if __name__ == "__main__":
     bert = BERT_LS()
-    while True:
-        sentence = input("Enter a sentence: ")
-        print("Simplified sentence:")
-        print(bert.simplify(sentence))
+    #while True:
+        #sentence = input("Enter a sentence: ")
+        #print("Simplified sentence:")
+        #print(bert.simplify(sentence))
+    print(bert.simplify("I like canines."))
+    print(bert.simplify("I like canines.  I especially like beagles."))

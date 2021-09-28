@@ -1,4 +1,10 @@
 I	N
-like	N
-cats	N
-.	N
+am	N
+not	N
+aware	N
+of	N
+the	N
+author	N
+of	N
+this	N
+book	N
