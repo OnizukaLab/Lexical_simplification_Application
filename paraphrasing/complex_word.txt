@@ -1,0 +1,4 @@
+I	N
+like	N
+cats	N
+.	N

@@ -675,9 +675,13 @@ class BERT_LS:
         self.max_seq_length = 250
         self.threshold = 0.5
         self.num_selections = 20
+        self.cache = {}
 
     def simplify(self, sentence):
-        return run_simplification(
+        if sentence in self.cache:
+            return self.cache[sentence]
+        else:
+            simplified = run_simplification(
                 sentence, 
                 self.model, 
                 self.tokenizer,
@@ -685,6 +689,8 @@ class BERT_LS:
                 self.max_seq_length, 
                 self.threshold, 
                 self.num_selections)
+            self.cache[sentence] = simplified
+            return simplified
 
     def replacement_list(self, word, sentence):
         return list_replacements(
@@ -699,6 +705,7 @@ class BERT_LS:
 
 if __name__ == "__main__":
     bert = BERT_LS()
-    sentence = input("Enter a sentence: ")
-    print("Simplified sentence:")
-    print(bert.simplify(sentence))
+    while True:
+        sentence = input("Enter a sentence: ")
+        print("Simplified sentence:")
+        print(bert.simplify(sentence))
