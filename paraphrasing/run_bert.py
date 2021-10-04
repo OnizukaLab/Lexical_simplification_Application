@@ -40,6 +40,7 @@ import heapq
 from nltk.stem import PorterStemmer
 from BERT_resources.simplification import Sentence
 from BERT_resources.simplification import Word
+from transformers import BertJapaneseTokenizer, BertConfig
 import truecase
 
 max_seq_length = 250
@@ -647,6 +648,30 @@ def run_simplification(one_sent, model, tokenizer, ranker, max_seq_length=250, t
 
     return ss
 
+def jp_simplification(one_sent, model, tokenizer, ranker, max_seq_length=250, threshold=0.5, num_selections=10):
+    jp_sent = tokenizer.tokenize(one_sent)
+    ignore_list = []
+    spacy_model = spacy.load('ja_core_news_sm')
+    spacy_sent = spacy_model(one_sent)
+
+    for i,x in enumerate(spacy_sent):
+        if x.ent_iob_!='O':
+            ignore_list.append(i)
+
+    for i,x in enumerate(jp_sent):
+        if len(x)<3:
+            if i not in ignore_list:
+                ignore_list.append(i)
+        #if x=="-rrb-" or x=="-lrb-":
+            #ignore_list.append(i)
+
+    tokens, words, positions = convert_sentence_to_token(one_sent, max_seq_length, tokenizer)
+    assert len(words)==len(positions)
+    simpilify_sentence = recursive_simplification(model, tokenizer, ranker, one_sent, tokens, positions, max_seq_length, nltk_sent, threshold, num_selections, ignore_list)
+    ss= " ".join(simpilify_sentence)
+
+    return ss
+
 def list_replacements(word, sentence, model, tokenizer, ranker, max_seq_length, threshold = 0.5, num_selections=10, ignore_list = []):
     tokens, words, positions = convert_sentence_to_token(sentence, max_seq_length, tokenizer)
     tokenized = nltk.word_tokenize(sentence)
@@ -672,6 +697,12 @@ class BERT_LS:
         word_frequency = "BERT_resources/SUBTLEX_frequency.xlsx"
         self.ranker = Ranker()
         self.ranker.read_features(word_embeddings, word_frequency, ppdb)
+
+        self.jp_tokenizer = BertJapaneseTokenizer.from_pretrained('cl-tohoku/bert-base-japanese-whole-word-masking')
+        model_type = "cl-tohoku/bert-base-japanese-whole-word-masking"
+        config = BertConfig.from_pretrained(model_type)
+        self.jp_model = BertForMaskedLM.from_pretrained(model_type, config=config)
+
         self.max_seq_length = 250
         self.threshold = 0.5
         self.num_selections = 20
@@ -686,6 +717,11 @@ class BERT_LS:
                 self.threshold, 
                 self.num_selections)
 
+    def simplify_jp(self, sentence):
+        return jp_simplification(
+
+                )
+
     def replacement_list(self, word, sentence):
         return list_replacements(
                 word,
@@ -699,6 +735,16 @@ class BERT_LS:
 
 if __name__ == "__main__":
     bert = BERT_LS()
-    sentence = input("Enter a sentence: ")
-    print("Simplified sentence:")
-    print(bert.simplify(sentence))
+    #while True:
+        #sentence = input("Enter a sentence: ")
+        #print("Simplified sentence:")
+        #print(bert.simplify(sentence))
+    print(bert.simplify("I like canines."))
+    print(bert.simplify("I like canines.  I especially like beagles."))
+    print(bert.simplify("I like canines.  I especially like beagles. I am not cognizant of who authored this novella."))
+    print(bert.simplify("I like felines.  I like canines.  I especially like beagles."))
+    print(bert.simplify("I hate meaningless diatribes.  I especially like beagles."))
+    print(bert.simplify("I like felines. The cat perched on the mat."))
+    print(bert.simplify("Much of the water carried by these streams is diverted."))
+    print(bert.simplify("The Amazon Basin is the part of South America drained by the Amazon River and its tributaries."))
+    print(bert.simplify("Much of the water carried by these streams is diverted. The Amazon Basin is the part of South America drained by the Amazon River and its tributaries."))

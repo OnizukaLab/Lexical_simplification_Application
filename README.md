@@ -41,6 +41,7 @@ pip install pathlib
 pip install sklearn
 pip install spacy
 python -m spacy download en_core_web_sm
+python -m spacy download ja_core_news_sm
 pip install tensorflow
 pip install inflect
 pip install truecase
