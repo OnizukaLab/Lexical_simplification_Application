@@ -41,6 +41,7 @@ from nltk.stem import PorterStemmer
 from BERT_resources.simplification import Sentence
 from BERT_resources.simplification import Word
 from transformers import BertJapaneseTokenizer, BertConfig
+import transformers
 import truecase
 
 max_seq_length = 250
@@ -82,7 +83,6 @@ class Ranker:
 
         f.close()
         return (words, We)
-
 
     def getWordCount(self, word_count_path):
         word2count = {}
@@ -142,6 +142,40 @@ def convert_sentence_to_token(sentence, seq_length, tokenizer):
             pre_word = new_word
             position2.append(new_pos)
     return tokenized_text, nltk_sent, position2
+
+def jp_convert_sentence_to_token(sentence, seq_length, tokenizer):
+    tokenized_text = tokenizer.tokenize(sentence)
+    assert len(tokenized_text) < seq_length-2
+    jp_sent = tokenizer.tokenize(sentence)
+    position2 = []
+    token_index = 0
+    start_pos =  len(tokenized_text)  + 2
+    pre_word = ""
+
+    for i,word in enumerate(sentence):
+        try:
+            len_token = len(tokenized_text[token_index])
+
+            if tokenized_text[token_index]==word or len_token>=len(word):
+                position2.append(start_pos+token_index)
+                pre_word = tokenized_text[token_index]
+                token_index += 1
+            else:
+                new_pos = []
+                new_pos.append(start_pos+token_index)
+                new_word = tokenized_text[token_index]
+                while new_word != word:
+                    token_index += 1
+                    new_word += tokenized_text[token_index].replace('##','')
+                    new_pos.append(start_pos+token_index)
+                    if len(new_word)==len(word):
+                        break
+                token_index += 1
+                pre_word = new_word
+                position2.append(new_pos)
+        except:
+            pass
+    return tokenized_text, jp_sent, position2
 
 def convert_whole_word_to_feature(tokens_a, mask_position, seq_length, tokenizer, prob_mask=0.5):
     """Loads a data file into a list of `InputFeature`s."""
@@ -385,6 +419,29 @@ def preprocess_SR(source_word, substitution_selection, fasttext_dico, fasttext_e
 
     return ss,sis_scores,count_scores
 
+def jp_preprocess_SR(source_word, substitution_selection, word_count):
+    ss = []
+    ##ss_score=[]
+    sis_scores=[]
+    count_scores=[]
+    isFast = True
+
+    #ss.append(source_word)
+
+    for sub in substitution_selection:
+        if sub not in word_count:
+            continue
+        else:
+            sub_count = word_count[sub]
+        if(sub_count<=3):
+            continue
+        #if sub_count<source_count:
+         #   continue
+        ss.append(sub)
+        count_scores.append(sub_count)
+
+    return ss,sis_scores,count_scores
+
 def compute_context_sis_score(source_word, sis_context, substitution_selection, fasttext_dico, fasttext_emb):
     context_sis = []
 
@@ -468,6 +525,65 @@ def substitution_ranking(source_word, source_context, substitution_selection, ss
         source_count = ranker.word_count[source_word]
     else:
         source_count = 0
+
+    pre_lm = lm_score[pre_index]
+
+    #print(lm_score)
+    #print(source_lm)
+    #print(pre_lm)
+
+
+    #pre_word = ss[pre_index]
+
+    if source_lm>pre_lm or pre_count>source_count:
+        pre_word = ss[pre_index]
+    else:
+        pre_word = source_word
+    
+    return pre_word
+
+def jp_substitution_ranking(source_word, source_context, substitution_selection, tokenizer, maskedLM, return_list=False):
+    ss,sis_scores,count_scores=jp_preprocess_SR(source_word, substitution_selection)
+
+    #print(ss)
+    if len(ss)==0:
+        return source_word
+
+    if len(sis_scores)>0:
+        seq = sorted(sis_scores,reverse = True )
+        sis_rank = [seq.index(v)+1 for v in sis_scores]
+    
+    rank_count = sorted(count_scores,reverse = True )
+    count_rank = [rank_count.index(v)+1 for v in count_scores]
+    lm_score,source_lm = LM_score(source_word,source_context,ss,tokenizer,maskedLM)
+    rank_lm = sorted(lm_score)
+    lm_rank = [rank_lm.index(v)+1 for v in lm_score]
+    bert_rank = []
+
+    for i in range(len(ss)):
+        bert_rank.append(i+1)
+
+    if len(sis_scores)>0:
+        all_ranks = [bert+sis+count+LM+ppdb  for bert,sis,count,LM,ppdb in zip(bert_rank,sis_rank,count_rank,lm_rank,ppdb_rank)]
+    else:
+        all_ranks = [bert+count+LM+ppdb  for bert,count,LM,ppdb in zip(bert_rank,count_rank,lm_rank,ppdb_rank)]
+    #all_ranks = [con for con in zip(context_rank)]
+
+    min_rank_index_list = map(all_ranks.index,heapq.nsmallest(len(all_ranks),all_ranks))
+
+    rank_words = []
+    for rank_index in list(min_rank_index_list):
+        rank_words.append(ss[rank_index])
+
+    if return_list:
+        return rank_words
+
+    pre_index = all_ranks.index(min(all_ranks))
+
+    #return ss[pre_index]
+
+    pre_count = count_scores[pre_index]
+    source_count = 0
 
     pre_lm = lm_score[pre_index]
 
@@ -624,6 +740,48 @@ def recursive_simplification( model, tokenizer, ranker, sentence, tokens, positi
         #when no simplifications possible return the sentence
         return sentence_object.tokenized
 
+def jp_recursive_simplification( model, tokenizer, sentence, tokens, positions, max_seq_length, tokenized, threshold = 0.5, num_selections=10, ignore_list = []):
+    sentence_object = Sentence(tokenized, threshold, ignore_list)
+
+    if (len(sentence_object.complex_words) > 0): #if there are complex words in the sentence
+        #take the most complex word
+        #print(sentence_object.complex_words)
+        (index,complexity), *tail = sentence_object.complex_words
+
+        word_object = Word(sentence_object, index)
+        #create word object 
+        #print('originial word---------', sentence_object.tokenized[index])
+        #assert words[index] == sentence_object.tokenized[index]
+        cgBERT = candidate_generation(model, tokenizer, tokenized, tokenized, index, positions, max_seq_length, ranker.ps, num_selections)
+
+        #print(cgBERT[:10])
+        mask_context = extract_context(tokenized,index,11)
+
+        #print(mask_context)
+        words_tag = nltk.pos_tag(tokenized)
+        complex_word_tag = words_tag[index][1]
+        complex_word_tag = preprocess_tag(complex_word_tag)
+
+        #print(words_tag)
+        #print(complex_word_tag)
+            
+
+        #print(tokenized[index])
+
+        pre_word = substitution_ranking(tokenized[index], mask_context, cgBERT, tokenizer, model)
+        #print(rank_words)
+        #print('substitute word-----------',pre_word)
+        
+        synonym = [pre_word]
+        if synonym != []:
+            sentence_object.make_simplification(synonym, word_object.index)
+
+        #recursively call function
+        return jp_recursive_simplification(model, tokenizer, sentence, tokens, positions, max_seq_length, tokenized,threshold, num_selections, sentence_object.ignore_index)
+    else:
+        #when no simplifications possible return the sentence
+        return sentence_object.tokenized
+
 def run_simplification(one_sent, model, tokenizer, ranker, max_seq_length=250, threshold=0.5, num_selections=10 ):
     nltk_sent = nltk.word_tokenize(one_sent)
     ignore_list = []
@@ -648,7 +806,7 @@ def run_simplification(one_sent, model, tokenizer, ranker, max_seq_length=250, t
 
     return ss
 
-def jp_simplification(one_sent, model, tokenizer, ranker, max_seq_length=250, threshold=0.5, num_selections=10):
+def jp_simplification(one_sent, model, tokenizer, max_seq_length=250, threshold=0.5, num_selections=10):
     jp_sent = tokenizer.tokenize(one_sent)
     ignore_list = []
     spacy_model = spacy.load('ja_core_news_sm')
@@ -665,9 +823,9 @@ def jp_simplification(one_sent, model, tokenizer, ranker, max_seq_length=250, th
         #if x=="-rrb-" or x=="-lrb-":
             #ignore_list.append(i)
 
-    tokens, words, positions = convert_sentence_to_token(one_sent, max_seq_length, tokenizer)
+    tokens, words, positions = jp_convert_sentence_to_token(one_sent, max_seq_length, tokenizer)
     assert len(words)==len(positions)
-    simpilify_sentence = recursive_simplification(model, tokenizer, ranker, one_sent, tokens, positions, max_seq_length, nltk_sent, threshold, num_selections, ignore_list)
+    simpilify_sentence = jp_recursive_simplification(model, tokenizer, one_sent, tokens, positions, max_seq_length, jp_sent, threshold, num_selections, ignore_list)
     ss= " ".join(simpilify_sentence)
 
     return ss
@@ -689,6 +847,7 @@ def list_replacements(word, sentence, model, tokenizer, ranker, max_seq_length, 
 class BERT_LS:
     def __init__(self):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        """
         self.model = model = BertForMaskedLM.from_pretrained('bert-base-uncased')
         self.model.to(device)
         self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
@@ -697,16 +856,19 @@ class BERT_LS:
         word_frequency = "BERT_resources/SUBTLEX_frequency.xlsx"
         self.ranker = Ranker()
         self.ranker.read_features(word_embeddings, word_frequency, ppdb)
+        """
 
         self.jp_tokenizer = BertJapaneseTokenizer.from_pretrained('cl-tohoku/bert-base-japanese-whole-word-masking')
         model_type = "cl-tohoku/bert-base-japanese-whole-word-masking"
         config = BertConfig.from_pretrained(model_type)
-        self.jp_model = BertForMaskedLM.from_pretrained(model_type, config=config)
+        self.jp_model = transformers.BertForMaskedLM.from_pretrained(model_type, config=config)
+        self.jp_model.to(device)
 
         self.max_seq_length = 250
         self.threshold = 0.5
         self.num_selections = 20
 
+    """
     def simplify(self, sentence):
         return run_simplification(
                 sentence, 
@@ -716,12 +878,18 @@ class BERT_LS:
                 self.max_seq_length, 
                 self.threshold, 
                 self.num_selections)
+    """
 
-    def simplify_jp(self, sentence):
+    def jp_simplify(self, sentence):
         return jp_simplification(
+                sentence, 
+                self.jp_model, 
+                self.jp_tokenizer,
+                self.max_seq_length, 
+                self.threshold, 
+                self.num_selections)
 
-                )
-
+    """
     def replacement_list(self, word, sentence):
         return list_replacements(
                 word,
@@ -732,6 +900,7 @@ class BERT_LS:
                 self.max_seq_length,
                 self.threshold,
                 self.num_selections)
+    """
 
 if __name__ == "__main__":
     bert = BERT_LS()
@@ -739,12 +908,4 @@ if __name__ == "__main__":
         #sentence = input("Enter a sentence: ")
         #print("Simplified sentence:")
         #print(bert.simplify(sentence))
-    print(bert.simplify("I like canines."))
-    print(bert.simplify("I like canines.  I especially like beagles."))
-    print(bert.simplify("I like canines.  I especially like beagles. I am not cognizant of who authored this novella."))
-    print(bert.simplify("I like felines.  I like canines.  I especially like beagles."))
-    print(bert.simplify("I hate meaningless diatribes.  I especially like beagles."))
-    print(bert.simplify("I like felines. The cat perched on the mat."))
-    print(bert.simplify("Much of the water carried by these streams is diverted."))
-    print(bert.simplify("The Amazon Basin is the part of South America drained by the Amazon River and its tributaries."))
-    print(bert.simplify("Much of the water carried by these streams is diverted. The Amazon Basin is the part of South America drained by the Amazon River and its tributaries."))
+    print(bert.jp_simplify("なんじの姿見えん"))
