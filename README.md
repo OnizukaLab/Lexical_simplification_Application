@@ -46,6 +46,8 @@ pip install tensorflow
 pip install inflect
 pip install truecase
 pip install boto3
+pip install fugashi[unidic-lite]
+pip install ipadic
 ```
  
 # Usage
