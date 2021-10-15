@@ -3,16 +3,31 @@ FROM python:3.7-buster
 ENV PYTHONUNBUFFRED 1
 
 #ビルド時
-RUN mkdir /usr/src/paraphrasing
+#RUN mkdir /usr/src/
 
 # ワークディレクトリの設定
-WORKDIR /usr/src/paraphrasing
+WORKDIR /usr/src/
 
 #requirements.txtをコピー
-ADD requirements.txt /usr/src/paraphrasing
+COPY requirements.txt /usr/src/
+COPY punkt_download.py /usr/src/
 
-#requiremtnts.txtを基にpipインストールをする
+# Mount the current directory.
+#VOLUME $PWD:/usr/src/paraphrasing
+#ADD . /usr/src/paraphrasing/
+
+# Install libraries
 RUN pip install -U pip &&\
   pip install --no-cache-dir -r requirements.txt
+#  pip install -r requirements.txt
+ADD https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-subword.zip /usr/src/paraphrasing/paraphrasing/BERT_Resources/
+ADD http://nlpgrid.seas.upenn.edu/PPDB/eng/ppdb-2.0-tldr.gz /usr/src/paraphrasing/paraphrasing/BERT_Resources/
+ADD https://github.com/siangooding/lexical_simplification/raw/master/gpu_attention.model /usr/src/paraphrasing/paraphrasing/BERT_Resources/
+RUN python -m spacy download en_core_web_sm
+RUN python punkt_download.py
 
-ADD . /usr/src/paraphrasing/
+# Open port
+#EXPOSE 80
+
+# Run manage.py
+CMD python3 /usr/src/paraphrasing/paraphrasing/manage.py runserver 0.0.0.0:80
