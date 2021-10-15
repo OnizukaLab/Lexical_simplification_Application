@@ -8,6 +8,8 @@
 python 3
 django 3.2.3 
 
+python -m spacy download en_core_web_sm
+
 NLTK - punkt:
 ```
 import nltk
@@ -30,21 +32,7 @@ https://github.com/siangooding/lexical_simplification/blob/master/gpu_attention.
 Requirementで列挙したライブラリなどのインストール方法
  
 ```
-pip install django
-pip install torch
-pip install openpyxl
-pip install numpy
-pip install scipy
-pip install nltk
-pip install tqdm
-pip install pathlib
-pip install sklearn
-pip install spacy
-python -m spacy download en_core_web_sm
-pip install tensorflow
-pip install inflect
-pip install truecase
-pip install boto3
+pip install -r requirements.txt
 ```
  
 # Usage
