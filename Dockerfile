@@ -12,7 +12,7 @@ WORKDIR /usr/src/paraphrasing
 ADD requirements.txt /usr/src/paraphrasing
 
 #requiremtnts.txtを基にpipインストールをする
-RUN pip instatll -U pip &&\
+RUN pip install -U pip &&\
   pip install --no-cache-dir -r requirements.txt
 
 ADD . /usr/src/paraphrasing/
