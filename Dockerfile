@@ -1,16 +1,18 @@
 # Python3のimegeを基にする
-FROM python:3
+FROM python:3.7-buster
 ENV PYTHONUNBUFFRED 1
 
 #ビルド時
-RUN mkdir /paraphrasing
+RUN mkdir /usr/src/paraphrasing
 
 # ワークディレクトリの設定
-WORKDIR /paraphrasing
+WORKDIR /usr/src/paraphrasing
 
 #requirements.txtをコピー
-ADD requirements.txt /paraphrasing
+ADD requirements.txt /usr/src/paraphrasing
 
 #requiremtnts.txtを基にpipインストールをする
-RUN pip install -r requirements.txt
-ADD . /paraphrasing/
+RUN pip instatll -U pip &&\
+  pip install --no-cache-dir -r requirements.txt
+
+ADD . /usr/src/paraphrasing/
