@@ -8,21 +8,16 @@ ENV PYTHONUNBUFFRED 1
 # ワークディレクトリの設定
 WORKDIR /usr/src/
 
-#requirements.txtをコピー
-COPY requirements.txt /usr/src/
-COPY punkt_download.py /usr/src/
-
-# Mount the current directory.
-#VOLUME $PWD:/usr/src/paraphrasing
-#ADD . /usr/src/paraphrasing/
+# Copy the current directory.
+COPY ./ /usr/src/
 
 # Install libraries
 RUN pip install -U pip &&\
   pip install --no-cache-dir -r requirements.txt
 #  pip install -r requirements.txt
-ADD https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-subword.zip /usr/src/paraphrasing/paraphrasing/BERT_Resources/
-ADD http://nlpgrid.seas.upenn.edu/PPDB/eng/ppdb-2.0-tldr.gz /usr/src/paraphrasing/paraphrasing/BERT_Resources/
-ADD https://github.com/siangooding/lexical_simplification/raw/master/gpu_attention.model /usr/src/paraphrasing/paraphrasing/BERT_Resources/
+ADD https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-subword.zip /usr/src/paraphrasing/BERT_resources/
+ADD http://nlpgrid.seas.upenn.edu/PPDB/eng/ppdb-2.0-tldr.gz /usr/src/paraphrasing/BERT_resources/
+ADD https://github.com/siangooding/lexical_simplification/raw/master/gpu_attention.model /usr/src/paraphrasing/BERT_resources/
 RUN python -m spacy download en_core_web_sm
 RUN python punkt_download.py
 
@@ -30,4 +25,4 @@ RUN python punkt_download.py
 #EXPOSE 80
 
 # Run manage.py
-CMD python3 /usr/src/paraphrasing/paraphrasing/manage.py runserver 0.0.0.0:80
+#CMD python3 /usr/src/paraphrasing/paraphrasing/manage.py runserver 0.0.0.0:80
