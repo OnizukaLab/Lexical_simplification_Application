@@ -9,10 +9,59 @@ git clone
 
 # Dockerを使用する場合
 
+## 
+
+BERT-LSを使うために、このファイルをダウンロードし、`paraphrasing/BERT_resources`に置く
+
+crawl-300d-2M-subword.vec: 
+https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-subword.zip
+
+ppdb-2.0-tldr:
+http://paraphrase.org/#/download
+
+gpu_attention_model: 
+https://github.com/siangooding/lexical_simplification/blob/master/gpu_attention.model
+
+
+ディレクトリ構成
+
+Paraphrasing2021/
+
+  ┣ README.md
+
+  ┣ Dockerfile
+
+  ┣ requirements.txt
+  
+  ┣ punkt_download.py
+
+  └ paraphrasing/
+
+    ┣ BERT_resources/
+
+      ┣ crawl-300d-2M-subword.vec
+
+      ┣ ppdb-2.0-tldr
+
+      ┣ gpu_attention_model
+
+      └ other files
+
+    ┣ paraphrasing/
+
+    ┣ board/
+
+    ┣ manage.py
+
+    └ run_bert.py
+
+
+## Dockerのビルド
+
 ```
 cd Paraphrasing2021
 docker build -t <image name> .
-docker run -it -p <portA>:<portB> -v $PWD:/usr/src/paraphrasing <image name> sh
+docker run -it -d -p <portA>:<portB> -v $PWD/paraphrasing:/usr/src/ <image name> sh
 python paraphrasing/manage.py runserver <portB>
 ```
 を実行し，
@@ -27,7 +76,7 @@ python paraphrasing/manage.py runserver <portB>
 git clone 
 cd Paraphrasing2021
 docker build -t paraphrasing .
-docker run -it -p 8000:80 -v $PWD:/usr/src/paraphrasing paraphrasing sh
+docker run -it -d -p 8000:80 -v $PWD/paraphrasing:/usr/src/ paraphrasing sh
 python3 paraphrasing/paraphrasing/manage.py runserver 0.0.0.0:80
 ```
 
