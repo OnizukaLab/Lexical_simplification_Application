@@ -52,6 +52,7 @@ NLTK - punkt:
 ```
 import nltk
 nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
 ```
 
 BERT-LSを使うために、このファイルをダウンロードし、BERT_Resourcesに置く
