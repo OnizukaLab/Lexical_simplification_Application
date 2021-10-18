@@ -5,3 +5,7 @@
 __pycache__/
 .DS_Store/
 crawl-300d-2M-subword
+0
+complex_word.txt
+length_half
+pretrained_model/
