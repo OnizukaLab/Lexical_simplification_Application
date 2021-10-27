@@ -1,88 +1,129 @@
 # Paraphrasing2021
 2021年度M1の語彙言い換えチーム．
 
-# Clone
+# アプリケーションの概要
+
+英語の語彙を平易に言い換えるWebアプリケーションです。
+モデルは文脈に沿った言い換えが可能な**BERT LS**を使用し、ブラウザのシンプルなUIで語彙言い換え操作を行うことができます。
+入力は単語/文/文章で、出力はそれに対応する言い換え処理後の単語/文/文章です。
+
+# 準備
+
+## Requirements
 
 ```
 git clone 
 ```
 
-# Dockerを使用する場合
+でクローンした後、
+BERT-LSを使うために、以下の3つのファイルをダウンロードし、`paraphrasing/BERT_resources`に置く。
 
-## 
+* [crawl-300d-2M-subword.vec](https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-subword.zip) (解凍時に存在する.binは不要)
 
-BERT-LSを使うために、このファイルをダウンロードし、`paraphrasing/BERT_resources`に置く
+* [ppdb-2.0-tldr](http://paraphrase.org/#/download)
 
-crawl-300d-2M-subword.vec: 
-https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-subword.zip
-
-ppdb-2.0-tldr:
-http://paraphrase.org/#/download
-
-gpu_attention_model: 
-https://github.com/siangooding/lexical_simplification/blob/master/gpu_attention.model
+* [gpu_attention_model](https://github.com/siangooding/lexical_simplification/blob/master/gpu_attention.model)
 
 
-ディレクトリ構成
+## ディレクトリ構成
 
 Paraphrasing2021/
 
-  ┣ README.md
+┣ paraphrasing/
 
-  ┣ Dockerfile
+┃ ┣ BERT_resources/
 
-  ┣ requirements.txt
-  
-  ┣ punkt_download.py
+┃ ┃ ┣ **crawl-300d-2M-subword.vec**
 
-  └ paraphrasing/
+┃ ┃ ┣ **ppdb-2.0-tldr**
 
-    ┣ BERT_resources/
+┃ ┃ ┣ **gpu_attention.model**
 
-      ┣ crawl-300d-2M-subword.vec
+┃ ┃ ┗ other files
 
-      ┣ ppdb-2.0-tldr
+┃ ┣ paraphrasing/
 
-      ┣ gpu_attention_model
+┃ ┣ board/
 
-      └ other files
+┃ ┣ manage.py
 
-    ┣ paraphrasing/
+┃ ┗ run_bert.py
 
-    ┣ board/
+┣ README.md
 
-    ┣ manage.py
+┣ Dockerfile
 
-    └ run_bert.py
+┣ requirements.txt
+
+┗ punkt_download.py
 
 
-## Dockerのビルド
+# Dockerを使用する場合
+
+
+## Dockerのビルドとシステムの起動
+
+`Paraphrasing2021`のディレクトリに入り、
 
 ```
-cd Paraphrasing2021
-docker build -t <image name> .
-docker run -it -d -p <portA>:<portB> -v $PWD/paraphrasing:/usr/src/ <image name> sh
-python paraphrasing/manage.py runserver <portB>
+docker build -t <イメージ名> .
 ```
+
+```
+docker run -it -d -p <ポートA>:<ポートB> -v $PWD/paraphrasing:/usr/src/ --gpus <GPUの設定> --name <コンテナ名> <イメージ名> sh
+```
+
 を実行し，
 
-`http://127.0.0.1:<portA>/`
-
-をクリックして、safariなどで開く。
-
-例えば，
-
 ```
-git clone 
-cd Paraphrasing2021
-docker build -t paraphrasing .
-docker run -it -d -p 8000:80 -v $PWD/paraphrasing:/usr/src/ paraphrasing sh
-python3 paraphrasing/paraphrasing/manage.py runserver 0.0.0.0:80
+docker exec -it <コンテナ名> sh
 ```
 
-http://127.0.0.1:8000/
+などでコンテナに入り、
 
-をクリックして、safariなどで開く。
+```
+python paraphrasing/manage.py runserver 0.0.0.0:<ポートB>
+```
+
+を実行し、
+
+http://<IPアドレス>:<ポートA>/
+
+をsafariやchromeなどのブラウザで開く。
+（ローカルで動作させているなら、IPアドレスは127.0.0.1）
+
+
+## 例
+
+IPアドレスが10.0.16.12のサーバで動作させる場合、
+`Paraphrasing2021`のディレクトリに入り、
+
+```
+docker build -t paraphrasing_img .
+```
+
+```
+docker run -it -d -p 8101:8101 -v $PWD/paraphrasing:/usr/src/ --gpus "device=0" --name paraphrasing paraphrasing_img sh
+```
+
+を実行し、
+
+```
+docker exec -it paraphrasing sh
+```
+
+などでコンテナに入り、
+
+```
+python3 manage.py runserver 0.0.0.0:8101
+```
+
+を実行し、
+
+http://10.0.16.12:8101
+
+をブラウザで開く。
+
 
 ***
 
@@ -95,7 +136,9 @@ http://127.0.0.1:8000/
 python 3
 django 3.2.3 
 
+```
 python -m spacy download en_core_web_sm
+```
 
 NLTK - punkt:
 ```
@@ -103,17 +146,6 @@ import nltk
 nltk.download('punkt')
 nltk.download('averaged_perceptron_tagger')
 ```
-
-BERT-LSを使うために、このファイルをダウンロードし、BERT_Resourcesに置く
-
-crawl-300d-2M-subword.vec: 
-https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-subword.zip
-
-ppdb-2.0-tldr:
-http://paraphrase.org/#/download
-
-gpu_attention_model: 
-https://github.com/siangooding/lexical_simplification/blob/master/gpu_attention.model
 
 ## Installation
  
@@ -123,23 +155,23 @@ Requirementで列挙したライブラリなどのインストール方法
 pip install -r requirements.txt
 ```
  
-## Usage
+## システムの起動
  
-実行方法など、基本的な使い方
+実行方法など、基本的な使い方：
  
 ```
-git clone 
 cd Paraphrasing2021/paraphrasing
+```
+
+```
 python manage.py runserver
 ```
 
+を実行し、
+
 http://127.0.0.1:8000/
 
-をクリックして、safariなどで開いた後、urlを
-
-http://127.0.0.1:8000/board　
-
-へ変更し、実行する。
+をsafariなどのブラウザで開く。
 
 # Citations
 
