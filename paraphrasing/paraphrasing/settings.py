@@ -27,7 +27,7 @@ DEBUG = True
 
 ALLOWED_HOSTS = [
     'localhost',
-    '10.0.16.12' # shiva server
+    '10.0.16.12' # server
 ]
 
 
