@@ -678,21 +678,8 @@ class BERT_LS:
         self.num_selections = 20
         self.cache = {}
 
-    def split_into_sentences(self, split_me):
-        splits = re.split("([.?!])", split_me)
-        splits.pop()
-        sentences = []
-        sentence = ""
-        for split in splits:
-            if len(split) >= 2:
-                sentence = split
-            else:
-                sentence += split
-                sentences.append(sentence)
-        return sentences
-
     def create_context_mapping(self, user_input):
-        sentences = self.split_into_sentences(user_input)
+        sentences = nltk.sent_tokenize(user_input)
         contexts = []
         for i in range(0, len(sentences)):
             sentence = sentences[i]
@@ -712,7 +699,7 @@ class BERT_LS:
         return bert_input
 
     def extract_center(self, model_output, context):
-        sentences = self.split_into_sentences(model_output)
+        sentences = nltk.sent_tokenize(model_output)
         if context[0] == "":
             return sentences[0]
         else:
