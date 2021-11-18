@@ -15,6 +15,7 @@ import random
 import math
 import sys
 import re
+import time
 
 from BERT_resources.tokenization import BertTokenizer
 from BERT_resources.modeling import BertModel, BertForMaskedLM
@@ -677,35 +678,67 @@ class BERT_LS:
         self.num_selections = 20
         self.cache = {}
 
-    def simplify(self, user_input):
-        sentences = re.split("([.?!])", user_input)
-        sentences.pop()
-        output = ""
-        is_first = True
+    def split_into_sentences(self, split_me):
+        splits = re.split("([.?!])", split_me)
+        splits.pop()
+        sentences = []
+        sentence = ""
+        for split in splits:
+            if len(split) >= 2:
+                sentence = split
+            else:
+                sentence += split
+                sentences.append(sentence)
+        return sentences
 
-        for sentence in sentences:
-            if len(sentence) < 1 or not sentence:
-                continue
-            elif len(sentence) == 1:
-                output += sentence
-            elif sentence in self.cache:
-                if not is_first:
-                    output += " "
-                output += self.cache[sentence]
+    def create_context_mapping(self, user_input):
+        sentences = self.split_into_sentences(user_input)
+        contexts = []
+        for i in range(0, len(sentences)):
+            sentence = sentences[i]
+            left_context = ""
+            right_context = ""
+            if i > 0:
+                left_context = sentences[i-1]
+            if i+1 < len(sentences):
+                right_context = sentences[i+1]
+            contexts.append((left_context, sentence, right_context))
+        return contexts
+
+    def context_to_input(self, context):
+        bert_input = ""
+        for sentence in context:
+            bert_input += sentence + " "
+        return bert_input
+
+    def extract_center(self, model_output, context):
+        sentences = self.split_into_sentences(model_output)
+        if context[0] == "":
+            return sentences[0]
+        else:
+            return sentences[1]
+
+    def simplify(self, user_input,):
+        contexts = self.create_context_mapping(user_input)
+        print(contexts)
+        output = ""
+
+        for context in contexts:
+            if context in self.cache:
+                output += self.cache[context]
             else:
                 simplified = run_simplification(
-                    sentence, 
+                    self.context_to_input(context), 
                     self.model, 
                     self.tokenizer,
                     self.ranker, 
                     self.max_seq_length, 
                     self.threshold, 
                     self.num_selections)
-                self.cache[sentence] = simplified
-                if not is_first:
-                    output += " "
+                simplified = self.extract_center(simplified, context)
+                self.cache[context] = simplified
                 output += simplified
-            is_first = False
+            output += " "
         return output
 
     def replacement_list(self, word, sentence):
@@ -721,9 +754,31 @@ class BERT_LS:
 
 if __name__ == "__main__":
     bert = BERT_LS()
-    #while True:
-        #sentence = input("Enter a sentence: ")
-        #print("Simplified sentence:")
-        #print(bert.simplify(sentence))
-    print(bert.simplify("I like canines."))
-    print(bert.simplify("I like canines.  I especially like beagles."))
+    #print(bert.replacement_list("verses", "John composed these verses."))
+    print("John composed these verses. ->", bert.simplify("John composed these verses."))
+    print("TARGET: John wrote these poems.")
+
+    # Cache time check
+    start = time.time()
+    print("The cat perched on the mat. ->", bert.simplify("The cat perched on the mat."))
+    end = time.time()
+    print("TARGET: The cat sat on the mat.")
+    print("Not cached, time taken: ", end-start)
+    start = time.time()
+    print("The cat perched on the mat. ->", bert.simplify("The cat perched on the mat."))
+    end = time.time()
+    print("Cached, time taken: ", end-start)
+
+    start = time.time()
+    print("The beagle howled.  Canines do that quite frequently. ->", bert.simplify("The beagle howled.  Canines do that quite frequently."))
+    end = time.time()
+    print("Not cached, time taken: ", end-start)
+    start = time.time()
+    print("The beagle howled.  Canines do that quite frequently. ->", bert.simplify("The beagle howled.  Canines do that quite frequently."))
+    end = time.time()
+    print("Cached, time taken: ", end-start)
+    print()
+    while True:
+        sentence = input("Enter a sentence: ")
+        print("Simplified sentence:")
+        print(bert.simplify(sentence))
