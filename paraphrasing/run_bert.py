@@ -644,6 +644,7 @@ def run_simplification(one_sent, model, tokenizer, ranker, max_seq_length=250, t
     tokens, words, positions = convert_sentence_to_token(one_sent, max_seq_length, tokenizer)
     assert len(words)==len(positions)
     simpilify_sentence = recursive_simplification(model, tokenizer, ranker, one_sent, tokens, positions, max_seq_length, nltk_sent, threshold, num_selections, ignore_list)
+    print(simpilify_sentence)
     ss= " ".join(simpilify_sentence)
 
     return ss
