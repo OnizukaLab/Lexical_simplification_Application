@@ -10,6 +10,8 @@ header{
 }
 
 textarea{
+    font-family : inherit;
+    font-size: 18px;
     resize: vertical;
     width:100%;
     min-height: 200px;
@@ -50,7 +52,7 @@ textarea{
 }
 
 /* ▼対象文章枠の装飾（任意） */
-#msg_highlight {
+#id_output_str {
     border: 2px solid gray;  /* 枠線 */
     border-radius: 0.67em;   /* 角丸 */
     padding: 0;          /* 内側余白 */
