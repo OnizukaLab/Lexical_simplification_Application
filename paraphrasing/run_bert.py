@@ -646,6 +646,10 @@ def run_simplification(one_sent, model, tokenizer, ranker, max_seq_length=250, t
     simpilify_sentence = recursive_simplification(model, tokenizer, ranker, one_sent, tokens, positions, max_seq_length, nltk_sent, threshold, num_selections, ignore_list)
     print(simpilify_sentence)
     ss= " ".join(simpilify_sentence)
+    ss = ss.replace(" .", ".")
+    ss = ss.replace(" ,", ",")
+    ss = ss.replace(" ?", "?")
+    ss = ss.replace(" !", "!")
 
     return ss
 
