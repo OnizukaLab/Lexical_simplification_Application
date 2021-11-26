@@ -73,7 +73,7 @@ class Ranker:
 
         for (n,line) in enumerate(lines):
             if (n == 0) :
-                print(line)
+                #print(line)
                 continue
             word, vect = line.rstrip().split(' ', 1)
             vect = np.fromstring(vect, sep=' ')
@@ -644,7 +644,7 @@ def run_simplification(one_sent, model, tokenizer, ranker, max_seq_length=250, t
     tokens, words, positions = convert_sentence_to_token(one_sent, max_seq_length, tokenizer)
     assert len(words)==len(positions)
     simpilify_sentence = recursive_simplification(model, tokenizer, ranker, one_sent, tokens, positions, max_seq_length, nltk_sent, threshold, num_selections, ignore_list)
-    print(simpilify_sentence)
+    #print(simpilify_sentence)
     ss= " ".join(simpilify_sentence)
     ss = ss.replace(" .", ".")
     ss = ss.replace(" ,", ",")
@@ -697,10 +697,27 @@ class BERT_LS:
             contexts.append((left_context, sentence, right_context))
         return contexts
 
-    def context_to_input(self, context):
+    def form_triples(self, user_input):
+        sentences = nltk.sent_tokenize(user_input)
+        triples = []
+        for i in range(0, len(sentences), 3):
+            left = sentences[i]
+            right = ""
+            righter = ""
+            if i+1 < len(sentences):
+                right = " " + sentences[i+1]
+            if i+2 < len(sentences):
+                righter = " " + sentences[i+2]
+            triples.append(left + right + righter)
+        return triples
+
+    def context_to_input(self, context, prev_sentence):
         bert_input = ""
-        for sentence in context:
-            bert_input += sentence + " "
+        for i, sentence in enumerate(context):
+            if i == 0 and prev_sentence:
+                bert_input += prev_sentence + " "
+            else:
+                bert_input += sentence + " "
         return bert_input
 
     def extract_center(self, model_output, context):
@@ -716,11 +733,13 @@ class BERT_LS:
         output = ""
 
         for context in contexts:
+            prev_sentence = ""
             if context in self.cache:
                 output += self.cache[context]
+                prev_sentence = self.cache[context]
             else:
                 simplified = run_simplification(
-                    self.context_to_input(context), 
+                    self.context_to_input(context, prev_sentence), 
                     self.model, 
                     self.tokenizer,
                     self.ranker, 
@@ -728,7 +747,30 @@ class BERT_LS:
                     self.threshold, 
                     self.num_selections)
                 simplified = self.extract_center(simplified, context)
+                prev_sentence = simplified
                 self.cache[context] = simplified
+                output += simplified
+            output += " "
+        return output
+
+    def p_simplify(self, user_input,):
+        triples = self.form_triples(user_input)
+        print(triples)
+        output = ""
+
+        for triple in triples:
+            if triple in self.cache:
+                output += self.cache[triple]
+            else:
+                simplified = run_simplification(
+                    triple, 
+                    self.model, 
+                    self.tokenizer,
+                    self.ranker, 
+                    self.max_seq_length, 
+                    self.threshold, 
+                    self.num_selections)
+                self.cache[triple] = simplified
                 output += simplified
             output += " "
         return output
@@ -746,6 +788,7 @@ class BERT_LS:
 
 if __name__ == "__main__":
     bert = BERT_LS()
+    """
     #print(bert.replacement_list("verses", "John composed these verses."))
     print("John composed these verses. ->", bert.simplify("John composed these verses."))
     print("TARGET: John wrote these poems.")
@@ -760,15 +803,42 @@ if __name__ == "__main__":
     print("The cat perched on the mat. ->", bert.simplify("The cat perched on the mat."))
     end = time.time()
     print("Cached, time taken: ", end-start)
+    """
+    start = time.time()
+    print("The beagle howled.  Canines do that quite frequently. ->", bert.simplify("The beagle howled.  Canines do that quite frequently."))
+    end = time.time()
+    print("No cache contexts: ", end-start)
+    start = time.time()
+    print("The beagle howled.  Canines do that quite frequently. ->", bert.simplify("The beagle howled.  Canines do that quite frequently."))
+    end = time.time()
+    print("Cache contexts: ", end-start)
 
     start = time.time()
-    print("The beagle howled.  Canines do that quite frequently. ->", bert.simplify("The beagle howled.  Canines do that quite frequently."))
+    print("The beagle howled.  Canines do that quite frequently. ->", bert.p_simplify("The beagle howled.  Canines do that quite frequently."))
     end = time.time()
-    print("Not cached, time taken: ", end-start)
+    print("No cache triples: ", end-start)
     start = time.time()
-    print("The beagle howled.  Canines do that quite frequently. ->", bert.simplify("The beagle howled.  Canines do that quite frequently."))
+    print("The beagle howled.  Canines do that quite frequently. ->", bert.p_simplify("The beagle howled.  Canines do that quite frequently."))
     end = time.time()
-    print("Cached, time taken: ", end-start)
+    print("Cache triples: ", end-start)
+
+    start = time.time()
+    print(bert.p_simplify("Think about what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you"))
+    end = time.time()
+    print("No cache triples: ", end-start)
+    start = time.time()
+    print( print(bert.p_simplify("Think about what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")))
+    end = time.time()
+    print("Cache triples: ", end-start)
+
+    start = time.time()
+    print(bert.simplify("Think about what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you"))
+    end = time.time()
+    print("No cache contexts: ", end-start)
+    start = time.time()
+    print( print(bert.simplify("Think about what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")))
+    end = time.time()
+    print("Cache contexts: ", end-start)
     print()
     while True:
         sentence = input("Enter a sentence: ")
