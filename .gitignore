@@ -1,6 +1,7 @@
 *.vec
 *-tldr
 *.model
+complex_word.txt
 .vscode/
 __pycache__/
 .DS_Store/

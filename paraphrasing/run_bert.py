@@ -697,6 +697,56 @@ class BERT_LS:
             contexts.append((left_context, sentence, right_context))
         return contexts
 
+    def find_uncached_contexts(self, contexts):
+        indices = []
+        for i, context in enumerate(contexts):
+            if context[1] not in self.cache:
+                indices.append(i)
+        return indices
+
+    def cache_all_sentences(self, original, model_output):
+        for key, value in zip(nltk.sent_tokenize(original), nltk.sent_tokenize(model_output)):
+            self.cache[key] = value
+
+    def simplify_no_cache(self, user_input):
+        print("No contexts here")
+        output = ""
+        simplified = run_simplification(
+            user_input, 
+            self.model, 
+            self.tokenizer,
+            self.ranker, 
+            self.max_seq_length, 
+            self.threshold, 
+            self.num_selections)
+        output = simplified
+        self.cache_all_sentences(user_input, simplified)
+        return output
+
+    def simplify_with_cache(self, contexts, uncached):
+        output = ""
+        print("Using contexts")
+        for i, context in enumerate(contexts):
+            prev_sentence = ""
+            if i in uncached:
+                simplified = run_simplification(
+                    self.context_to_input(context, prev_sentence), 
+                    self.model, 
+                    self.tokenizer,
+                    self.ranker, 
+                    self.max_seq_length, 
+                    self.threshold, 
+                    self.num_selections)
+                simplified = self.extract_center(simplified, context)
+                prev_sentence = simplified
+                self.cache[context[1]] = simplified
+                output += simplified
+            else:
+                output += self.cache[context[1]]
+                prev_sentence = self.cache[context[1]]
+            output += " "
+        return output
+
     def form_triples(self, user_input):
         sentences = nltk.sent_tokenize(user_input)
         triples = []
@@ -729,28 +779,13 @@ class BERT_LS:
 
     def simplify(self, user_input,):
         contexts = self.create_context_mapping(user_input)
+        uncached_contexts = self.find_uncached_contexts(contexts)
         print(contexts)
         output = ""
-
-        for context in contexts:
-            prev_sentence = ""
-            if context in self.cache:
-                output += self.cache[context]
-                prev_sentence = self.cache[context]
-            else:
-                simplified = run_simplification(
-                    self.context_to_input(context, prev_sentence), 
-                    self.model, 
-                    self.tokenizer,
-                    self.ranker, 
-                    self.max_seq_length, 
-                    self.threshold, 
-                    self.num_selections)
-                simplified = self.extract_center(simplified, context)
-                prev_sentence = simplified
-                self.cache[context] = simplified
-                output += simplified
-            output += " "
+        if len(uncached_contexts) == len(nltk.sent_tokenize(user_input)):
+            output = self.simplify_no_cache(user_input)
+        else:
+            output = self.simplify_with_cache(contexts, uncached_contexts)
         return output
 
     def p_simplify(self, user_input,):
@@ -794,50 +829,50 @@ if __name__ == "__main__":
     print("TARGET: John wrote these poems.")
 
     # Cache time check
-    start = time.time()
+    start = time.perf_counter()
     print("The cat perched on the mat. ->", bert.simplify("The cat perched on the mat."))
-    end = time.time()
+    end = time.perf_counter()
     print("TARGET: The cat sat on the mat.")
     print("Not cached, time taken: ", end-start)
-    start = time.time()
+    start = time.perf_counter()
     print("The cat perched on the mat. ->", bert.simplify("The cat perched on the mat."))
-    end = time.time()
+    end = time.perf_counter()
     print("Cached, time taken: ", end-start)
     """
-    start = time.time()
+    start = time.perf_counter()
     print("The beagle howled.  Canines do that quite frequently. ->", bert.simplify("The beagle howled.  Canines do that quite frequently."))
-    end = time.time()
+    end = time.perf_counter()
     print("No cache contexts: ", end-start)
-    start = time.time()
+    start = time.perf_counter()
     print("The beagle howled.  Canines do that quite frequently. ->", bert.simplify("The beagle howled.  Canines do that quite frequently."))
-    end = time.time()
+    end = time.perf_counter()
     print("Cache contexts: ", end-start)
 
-    start = time.time()
+    start = time.perf_counter()
     print("The beagle howled.  Canines do that quite frequently. ->", bert.p_simplify("The beagle howled.  Canines do that quite frequently."))
-    end = time.time()
+    end = time.perf_counter()
     print("No cache triples: ", end-start)
-    start = time.time()
+    start = time.perf_counter()
     print("The beagle howled.  Canines do that quite frequently. ->", bert.p_simplify("The beagle howled.  Canines do that quite frequently."))
-    end = time.time()
+    end = time.perf_counter()
     print("Cache triples: ", end-start)
 
-    start = time.time()
+    start = time.perf_counter()
     print(bert.p_simplify("Think about what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you"))
-    end = time.time()
+    end = time.perf_counter()
     print("No cache triples: ", end-start)
-    start = time.time()
-    print( print(bert.p_simplify("Think about what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")))
-    end = time.time()
+    start = time.perf_counter()
+    print( print(bert.p_simplify("Contemplate on what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")))
+    end = time.perf_counter()
     print("Cache triples: ", end-start)
 
-    start = time.time()
+    start = time.perf_counter()
     print(bert.simplify("Think about what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you"))
-    end = time.time()
+    end = time.perf_counter()
     print("No cache contexts: ", end-start)
-    start = time.time()
-    print( print(bert.simplify("Think about what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")))
-    end = time.time()
+    start = time.perf_counter()
+    print( print(bert.simplify("Contemplate on what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")))
+    end = time.perf_counter()
     print("Cache contexts: ", end-start)
     print()
     while True:
