@@ -17,6 +17,8 @@ import sys
 import re
 import time
 
+from numpy.ma.core import right_shift
+
 from BERT_resources.tokenization import BertTokenizer
 from BERT_resources.modeling import BertModel, BertForMaskedLM
 
@@ -667,6 +669,17 @@ def list_replacements(word, sentence, model, tokenizer, ranker, max_seq_length, 
 
     return substitution_ranking(tokenized[index], mask_context, cgBERT, cgPPDB, ranker, tokenizer, model, True)
 
+class Context:
+    def __init__(self, left, center, right, cached=False, skip=False):
+        self.left = left
+        self.center = center
+        self.right = right
+        self.cached = cached
+        self.skip = skip
+
+    def to_input(self):
+        return self.left + " " + self.center + " " + self.right
+
 class BERT_LS:
     def __init__(self):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -694,14 +707,21 @@ class BERT_LS:
                 left_context = sentences[i-1]
             if i+1 < len(sentences):
                 right_context = sentences[i+1]
-            contexts.append((left_context, sentence, right_context))
+            contexts.append(Context(left_context, sentence, right_context))
         return contexts
 
-    def find_uncached_contexts(self, contexts):
+    def find_uncached_sentences(self, contexts):
         indices = []
         for i, context in enumerate(contexts):
-            if context[1] not in self.cache:
+            if context.center not in self.cache:
+                if i > 0:
+                    contexts[i-1].skip = True
                 indices.append(i)
+                if i+1 < len(contexts):
+                    contexts[i+1].skip = True
+            else:
+                context.skip = False
+                context.cached = True
         return indices
 
     def cache_all_sentences(self, original, model_output):
@@ -727,23 +747,20 @@ class BERT_LS:
         output = ""
         print("Using contexts")
         for i, context in enumerate(contexts):
-            prev_sentence = ""
-            if i in uncached:
+            if not context.cached:
                 simplified = run_simplification(
-                    self.context_to_input(context, prev_sentence), 
+                    context.to_input(), 
                     self.model, 
                     self.tokenizer,
                     self.ranker, 
                     self.max_seq_length, 
                     self.threshold, 
                     self.num_selections)
-                simplified = self.extract_center(simplified, context)
-                prev_sentence = simplified
-                self.cache[context[1]] = simplified
+                dict_value = self.extract_center(simplified, context)
+                self.cache[context.center] = dict_value
                 output += simplified
-            else:
-                output += self.cache[context[1]]
-                prev_sentence = self.cache[context[1]]
+            elif not context.skip:
+                output += self.cache[context.center]
             output += " "
         return output
 
@@ -772,20 +789,20 @@ class BERT_LS:
 
     def extract_center(self, model_output, context):
         sentences = nltk.sent_tokenize(model_output)
-        if context[0] == "":
+        if context.left == "":
             return sentences[0]
         else:
             return sentences[1]
 
     def simplify(self, user_input,):
         contexts = self.create_context_mapping(user_input)
-        uncached_contexts = self.find_uncached_contexts(contexts)
+        uncached_sentences = self.find_uncached_sentences(contexts)
         print(contexts)
         output = ""
-        if len(uncached_contexts) == len(nltk.sent_tokenize(user_input)):
+        if len(uncached_sentences) == len(nltk.sent_tokenize(user_input)):
             output = self.simplify_no_cache(user_input)
         else:
-            output = self.simplify_with_cache(contexts, uncached_contexts)
+            output = self.simplify_with_cache(contexts, uncached_sentences)
         return output
 
     def p_simplify(self, user_input,):
