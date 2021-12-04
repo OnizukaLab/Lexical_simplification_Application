@@ -696,7 +696,7 @@ class BERT_LS:
         self.num_selections = 20
         self.cache = {}
 
-    def create_context_mapping(self, user_input):
+    def _create_context_mapping(self, user_input):
         sentences = nltk.sent_tokenize(user_input)
         contexts = []
         for i in range(0, len(sentences)):
@@ -710,7 +710,7 @@ class BERT_LS:
             contexts.append(Context(left_context, sentence, right_context))
         return contexts
 
-    def find_uncached_sentences(self, contexts):
+    def _find_uncached_sentences(self, contexts):
         indices = []
         for i, context in enumerate(contexts):
             if context.center not in self.cache:
@@ -724,11 +724,11 @@ class BERT_LS:
                 context.cached = True
         return indices
 
-    def cache_all_sentences(self, original, model_output):
+    def _cache_all_sentences(self, original, model_output):
         for key, value in zip(nltk.sent_tokenize(original), nltk.sent_tokenize(model_output)):
             self.cache[key] = value
 
-    def simplify_no_cache(self, user_input):
+    def _simplify_no_cache(self, user_input):
         print("No contexts here")
         output = ""
         simplified = run_simplification(
@@ -740,10 +740,10 @@ class BERT_LS:
             self.threshold, 
             self.num_selections)
         output = simplified
-        self.cache_all_sentences(user_input, simplified)
+        self._cache_all_sentences(user_input, simplified)
         return output
 
-    def simplify_with_cache(self, contexts, uncached):
+    def _simplify_with_cache(self, contexts, uncached):
         output = ""
         print("Using contexts")
         for i, context in enumerate(contexts):
@@ -756,7 +756,7 @@ class BERT_LS:
                     self.max_seq_length, 
                     self.threshold, 
                     self.num_selections)
-                dict_value = self.extract_center(simplified, context)
+                dict_value = self._extract_center(simplified, context)
                 self.cache[context.center] = dict_value
                 output += simplified
             elif not context.skip:
@@ -764,7 +764,7 @@ class BERT_LS:
             output += " "
         return output
 
-    def form_triples(self, user_input):
+    def _form_triples(self, user_input):
         sentences = nltk.sent_tokenize(user_input)
         triples = []
         for i in range(0, len(sentences), 3):
@@ -778,7 +778,7 @@ class BERT_LS:
             triples.append(left + right + righter)
         return triples
 
-    def context_to_input(self, context, prev_sentence):
+    def _context_to_input(self, context, prev_sentence):
         bert_input = ""
         for i, sentence in enumerate(context):
             if i == 0 and prev_sentence:
@@ -787,7 +787,7 @@ class BERT_LS:
                 bert_input += sentence + " "
         return bert_input
 
-    def extract_center(self, model_output, context):
+    def _extract_center(self, model_output, context):
         sentences = nltk.sent_tokenize(model_output)
         if context.left == "":
             return sentences[0]
@@ -795,18 +795,17 @@ class BERT_LS:
             return sentences[1]
 
     def simplify(self, user_input,):
-        contexts = self.create_context_mapping(user_input)
-        uncached_sentences = self.find_uncached_sentences(contexts)
-        print(contexts)
+        contexts = self._create_context_mapping(user_input)
+        uncached_sentences = self._find_uncached_sentences(contexts)
         output = ""
         if len(uncached_sentences) == len(nltk.sent_tokenize(user_input)):
-            output = self.simplify_no_cache(user_input)
+            output = self._simplify_no_cache(user_input)
         else:
-            output = self.simplify_with_cache(contexts, uncached_sentences)
+            output = self._simplify_with_cache(contexts, uncached_sentences)
         return output
 
     def p_simplify(self, user_input,):
-        triples = self.form_triples(user_input)
+        triples = self._form_triples(user_input)
         print(triples)
         output = ""
 
