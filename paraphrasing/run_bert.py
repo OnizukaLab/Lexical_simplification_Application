@@ -33,6 +33,7 @@ from pathlib import Path
 
 from BERT_resources.PPDB import Ppdb
 from nltk.tokenize import word_tokenize
+from nltk.translate.bleu_score import sentence_bleu
 
 # OPTIONAL: if you want to have more information on what's happening, activate the logger as follows
 import numpy as np
@@ -729,7 +730,6 @@ class BERT_LS:
             self.cache[key] = value
 
     def _simplify_no_cache(self, user_input):
-        print("No contexts here")
         output = ""
         simplified = run_simplification(
             user_input, 
@@ -745,7 +745,6 @@ class BERT_LS:
 
     def _simplify_with_cache(self, contexts, uncached):
         output = ""
-        print("Using contexts")
         for i, context in enumerate(contexts):
             if not context.cached:
                 simplified = run_simplification(
@@ -763,20 +762,6 @@ class BERT_LS:
                 output += self.cache[context.center]
             output += " "
         return output
-
-    def _form_triples(self, user_input):
-        sentences = nltk.sent_tokenize(user_input)
-        triples = []
-        for i in range(0, len(sentences), 3):
-            left = sentences[i]
-            right = ""
-            righter = ""
-            if i+1 < len(sentences):
-                right = " " + sentences[i+1]
-            if i+2 < len(sentences):
-                righter = " " + sentences[i+2]
-            triples.append(left + right + righter)
-        return triples
 
     def _context_to_input(self, context, prev_sentence):
         bert_input = ""
@@ -804,28 +789,6 @@ class BERT_LS:
             output = self._simplify_with_cache(contexts, uncached_sentences)
         return output
 
-    def p_simplify(self, user_input,):
-        triples = self._form_triples(user_input)
-        print(triples)
-        output = ""
-
-        for triple in triples:
-            if triple in self.cache:
-                output += self.cache[triple]
-            else:
-                simplified = run_simplification(
-                    triple, 
-                    self.model, 
-                    self.tokenizer,
-                    self.ranker, 
-                    self.max_seq_length, 
-                    self.threshold, 
-                    self.num_selections)
-                self.cache[triple] = simplified
-                output += simplified
-            output += " "
-        return output
-
     def replacement_list(self, word, sentence):
         return list_replacements(
                 word,
@@ -837,61 +800,29 @@ class BERT_LS:
                 self.threshold,
                 self.num_selections)
 
+def run_test_case(bert, input_sentence, target=""):
+    print("----------------------------------------")
+    print("INPUT: " + input_sentence)
+    print("TARGET: " + target)
+    start = time.perf_counter()
+    output = bert.simplify(input_sentence)
+    end = time.perf_counter()
+    print("BERT: " + output)
+    print()
+    #if target:
+        #print("BLEU: ", sentence_bleu(output, target, weights=(0.5, 0.5)))
+    print("Time Taken: ", end-start)
+    print("----------------------------------------")
+
 if __name__ == "__main__":
     bert = BERT_LS()
-    """
-    #print(bert.replacement_list("verses", "John composed these verses."))
-    print("John composed these verses. ->", bert.simplify("John composed these verses."))
-    print("TARGET: John wrote these poems.")
+    print(bert.replacement_list("verses", "John composed these verses."))
+    run_test_case(bert, "John composed these verses.", "John wrote these poems.")
+    run_test_case(bert, "The cat perched on the mat.", "The cat sat on the mat.")
+    run_test_case(bert, "The beagle howled.  Canines do that quite frequently.")
+    run_test_case(bert, "Think about what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")
+    run_test_case(bert, "Contemplate on what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")
 
-    # Cache time check
-    start = time.perf_counter()
-    print("The cat perched on the mat. ->", bert.simplify("The cat perched on the mat."))
-    end = time.perf_counter()
-    print("TARGET: The cat sat on the mat.")
-    print("Not cached, time taken: ", end-start)
-    start = time.perf_counter()
-    print("The cat perched on the mat. ->", bert.simplify("The cat perched on the mat."))
-    end = time.perf_counter()
-    print("Cached, time taken: ", end-start)
-    """
-    start = time.perf_counter()
-    print("The beagle howled.  Canines do that quite frequently. ->", bert.simplify("The beagle howled.  Canines do that quite frequently."))
-    end = time.perf_counter()
-    print("No cache contexts: ", end-start)
-    start = time.perf_counter()
-    print("The beagle howled.  Canines do that quite frequently. ->", bert.simplify("The beagle howled.  Canines do that quite frequently."))
-    end = time.perf_counter()
-    print("Cache contexts: ", end-start)
-
-    start = time.perf_counter()
-    print("The beagle howled.  Canines do that quite frequently. ->", bert.p_simplify("The beagle howled.  Canines do that quite frequently."))
-    end = time.perf_counter()
-    print("No cache triples: ", end-start)
-    start = time.perf_counter()
-    print("The beagle howled.  Canines do that quite frequently. ->", bert.p_simplify("The beagle howled.  Canines do that quite frequently."))
-    end = time.perf_counter()
-    print("Cache triples: ", end-start)
-
-    start = time.perf_counter()
-    print(bert.p_simplify("Think about what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you"))
-    end = time.perf_counter()
-    print("No cache triples: ", end-start)
-    start = time.perf_counter()
-    print( print(bert.p_simplify("Contemplate on what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")))
-    end = time.perf_counter()
-    print("Cache triples: ", end-start)
-
-    start = time.perf_counter()
-    print(bert.simplify("Think about what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you"))
-    end = time.perf_counter()
-    print("No cache contexts: ", end-start)
-    start = time.perf_counter()
-    print( print(bert.simplify("Contemplate on what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")))
-    end = time.perf_counter()
-    print("Cache contexts: ", end-start)
-    print()
     while True:
         sentence = input("Enter a sentence: ")
-        print("Simplified sentence:")
-        print(bert.simplify(sentence))
+        run_test_case(bert, sentence)
