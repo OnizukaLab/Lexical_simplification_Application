@@ -1,4 +1,4 @@
-think	N
+and	N
 on	N
 what	N
 your	N

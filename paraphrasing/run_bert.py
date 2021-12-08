@@ -670,6 +670,7 @@ def list_replacements(word, sentence, model, tokenizer, ranker, max_seq_length, 
 
     return substitution_ranking(tokenized[index], mask_context, cgBERT, cgPPDB, ranker, tokenizer, model, True)
 
+#　BERT_LSでキャッシュ使うかどうか決定の支援クラスだけだ
 class Context:
     def __init__(self, left, center, right, cached=False, skip=False):
         self.left = left
@@ -779,6 +780,20 @@ class BERT_LS:
         else:
             return sentences[1]
 
+    def run_test_case(self, input_sentence, target=""):
+        print("----------------------------------------")
+        print("INPUT: " + input_sentence)
+        print("TARGET: " + target)
+        start = time.perf_counter()
+        output = self.simplify(input_sentence)
+        end = time.perf_counter()
+        print("BERT: " + output)
+        print()
+        if target:
+            print("BLEU: ", sentence_bleu(output, target, weights=[1]))
+        print("Time Taken: ", end-start)
+        print("----------------------------------------")
+
     def simplify(self, user_input,):
         contexts = self._create_context_mapping(user_input)
         uncached_sentences = self._find_uncached_sentences(contexts)
@@ -800,29 +815,15 @@ class BERT_LS:
                 self.threshold,
                 self.num_selections)
 
-def run_test_case(bert, input_sentence, target=""):
-    print("----------------------------------------")
-    print("INPUT: " + input_sentence)
-    print("TARGET: " + target)
-    start = time.perf_counter()
-    output = bert.simplify(input_sentence)
-    end = time.perf_counter()
-    print("BERT: " + output)
-    print()
-    #if target:
-        #print("BLEU: ", sentence_bleu(output, target, weights=(0.5, 0.5)))
-    print("Time Taken: ", end-start)
-    print("----------------------------------------")
-
 if __name__ == "__main__":
     bert = BERT_LS()
     print(bert.replacement_list("verses", "John composed these verses."))
-    run_test_case(bert, "John composed these verses.", "John wrote these poems.")
-    run_test_case(bert, "The cat perched on the mat.", "The cat sat on the mat.")
-    run_test_case(bert, "The beagle howled.  Canines do that quite frequently.")
-    run_test_case(bert, "Think about what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")
-    run_test_case(bert, "Contemplate on what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")
+    bert.run_test_case("John composed these verses.", "John wrote these poems.")
+    bert.run_test_case("The cat perched on the mat.", "The cat sat on the mat.")
+    bert.run_test_case("The beagle howled.  Canines do that quite frequently.")
+    bert.run_test_case("Think about what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")
+    bert.run_test_case("Contemplate on what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")
 
     while True:
         sentence = input("Enter a sentence: ")
-        run_test_case(bert, sentence)
+        bert.run_test_case(sentence)
