@@ -310,7 +310,8 @@ def get_score(sentence,tokenizer,maskedLM):
         #print(mask_input)
         mask_input = mask_input.to('cuda')
         with torch.no_grad():
-            pre_word =maskedLM(mask_input)
+            att, pre_word =maskedLM(mask_input)
+        #print(pre_word)
         word_loss = cross_entropy_word(pre_word[0].cpu().numpy(),i,input_ids[i])
         sentence_loss += word_loss
         #print(word_loss)
@@ -571,7 +572,8 @@ def candidate_generation(model, tokenizer, tokens, words, mask_index, positions,
     attention_mask = attention_mask.to('cuda')
 
     with torch.no_grad():
-        prediction_scores = model(tokens_tensor, token_type_ids, attention_mask)
+        all_attentions, prediction_scores = model(tokens_tensor, token_type_ids, attention_mask)
+    #print(all_attentions)
 
     if isinstance(mask_position,list):
         predicted_top = prediction_scores[0, mask_position[0]].topk(80)
@@ -685,9 +687,9 @@ class Context:
 class BERT_LS:
     def __init__(self):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-        self.model = model = BertForMaskedLM.from_pretrained('bert-base-uncased')
+        self.model = BertForMaskedLM.from_pretrained('bert-large-uncased-whole-word-masking', output_attentions=True)
         self.model.to(device)
-        self.tokenizer = BertTokenizer.from_pretrained('bert-base-uncased', do_lower_case=True)
+        self.tokenizer = BertTokenizer.from_pretrained('bert-large-uncased-whole-word-masking', do_lower_case=True)
         ppdb = "BERT_resources/ppdb-2.0-tldr"
         word_embeddings = "BERT_resources/crawl-300d-2M-subword.vec"
         word_frequency = "BERT_resources/SUBTLEX_frequency.xlsx"
