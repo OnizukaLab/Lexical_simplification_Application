@@ -820,9 +820,14 @@ if __name__ == "__main__":
     print(bert.replacement_list("verses", "John composed these verses."))
     bert.run_test_case("John composed these verses.", "John wrote these poems.")
     bert.run_test_case("The cat perched on the mat.", "The cat sat on the mat.")
-    bert.run_test_case("The beagle howled.  Canines do that quite frequently.")
-    bert.run_test_case("Think about what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")
-    bert.run_test_case("Contemplate on what your circumstances will be when your payments restart. Will you need a lower monthly payment? For a more affordable payment, consider switching to an IDR plan. Under an IDR plan, payments are based on your income and family size. Start an IDR application to estimate your monthly payment and find out if an IDR plan is right for you")
+    bert.run_test_case(
+        "Since its founding, the United States has relied on citizen participation to govern at the local, state, and national levels. This civic engagement ensures that representative democracy will continue to flourish and that people will continue to influence government. In the early nineteenth century, agitated citizens called for the removal of property requirements for voting so poor white men could participate in government just as wealthy men could.",
+        "Since its founding, the United States has relied on citizen support to govern at the local, state, and national levels. This civic commitment ensures that representative democracy will continue to grow and that people will continue to guide government. In the early nineteenth century, agitated citizens called for the removal of property requirements for voting so poor white men could participate in government just as prosperous men could."
+        )
+    bert.run_test_case(
+        "Since its founding, the USA has relied on citizen participation to govern at the local, state, and national levels. This civic engagement ensures that representative democracy will continue to flourish and that people will continue to influence government. In the early nineteenth century, agitated citizens called for the removal of property requirements for voting so poor white men could participate in government just as wealthy men could.",
+        "Since its founding, the USA has relied on citizen support to govern at the local, state, and national levels. This civic commitment ensures that representative democracy will continue to grow and that people will continue to guide government. In the early nineteenth century, agitated citizens called for the removal of property requirements for voting so poor white men could participate in government just as prosperous men could."
+        )
 
     while True:
         sentence = input("Enter a sentence: ")
