@@ -24,7 +24,7 @@
                 {% csrf_token %}
                 Input
                 <textarea name="input_str" id="id_input_str" rows="4" cols="40" placeholder="Please input a sentence" onkeyup='document.getElementById("id_submit").click()'>{{input_str}}</textarea>
-                <input type="submit" value="Input" id="id_submit" style="display:none;">
+                <input type="submit" value="Input" id="id_submit">
             </form>
             </div>
         </div>
@@ -88,6 +88,7 @@ document.getElementById("btn-onoff").onclick  = highlightcheck;
 //document.getElementById("id_output_str").innerHTML = forShow;
 
 // textareaに入力途中の内容も取得
+/*
 $('#id_input_form').on('submit', e => {
     e.preventDefault();
  
@@ -103,6 +104,7 @@ $('#id_input_form').on('submit', e => {
       $('#id_output_str').append({ text: response.output_str });
     });
 });
+*/
 
 //$('#id_input_str').keyup(function() {
 //    $('#id_submit').click();
