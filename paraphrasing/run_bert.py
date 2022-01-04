@@ -15,6 +15,9 @@ import random
 import math
 import sys
 import re
+import time
+
+from numpy.ma.core import right_shift
 
 from BERT_resources.tokenization import BertTokenizer
 from BERT_resources.modeling import BertModel, BertForMaskedLM
@@ -30,6 +33,7 @@ from pathlib import Path
 
 from BERT_resources.PPDB import Ppdb
 from nltk.tokenize import word_tokenize
+from nltk.translate.bleu_score import sentence_bleu
 
 # OPTIONAL: if you want to have more information on what's happening, activate the logger as follows
 import numpy as np
@@ -72,7 +76,7 @@ class Ranker:
 
         for (n,line) in enumerate(lines):
             if (n == 0) :
-                print(line)
+                #print(line)
                 continue
             word, vect = line.rstrip().split(' ', 1)
             vect = np.fromstring(vect, sep=' ')
@@ -645,7 +649,12 @@ def run_simplification(one_sent, model, tokenizer, ranker, max_seq_length=250, t
     tokens, words, positions = convert_sentence_to_token(one_sent, max_seq_length, tokenizer)
     assert len(words)==len(positions)
     simpilify_sentence = recursive_simplification(model, tokenizer, ranker, one_sent, tokens, positions, max_seq_length, nltk_sent, threshold, num_selections, ignore_list)
+    #print(simpilify_sentence)
     ss= " ".join(simpilify_sentence)
+    ss = ss.replace(" .", ".")
+    ss = ss.replace(" ,", ",")
+    ss = ss.replace(" ?", "?")
+    ss = ss.replace(" !", "!")
 
     return ss
 
@@ -663,6 +672,18 @@ def list_replacements(word, sentence, model, tokenizer, ranker, max_seq_length, 
 
     return substitution_ranking(tokenized[index], mask_context, cgBERT, cgPPDB, ranker, tokenizer, model, True)
 
+#　BERT_LSでキャッシュ使うかどうか決定の支援クラスだけだ
+class Context:
+    def __init__(self, left, center, right, cached=False, skip=False):
+        self.left = left
+        self.center = center
+        self.right = right
+        self.cached = cached
+        self.skip = skip
+
+    def to_input(self):
+        return self.left + " " + self.center + " " + self.right
+
 class BERT_LS:
     def __init__(self):
         device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
@@ -677,16 +698,113 @@ class BERT_LS:
         self.max_seq_length = 250
         self.threshold = 0.5
         self.num_selections = 20
+        self.cache = {}
 
-    def simplify(self, sentence):
-        return run_simplification(
-                sentence, 
-                self.model, 
-                self.tokenizer,
-                self.ranker, 
-                self.max_seq_length, 
-                self.threshold, 
-                self.num_selections)
+    def _create_context_mapping(self, user_input):
+        sentences = nltk.sent_tokenize(user_input)
+        contexts = []
+        for i in range(0, len(sentences)):
+            sentence = sentences[i]
+            left_context = ""
+            right_context = ""
+            if i > 0:
+                left_context = sentences[i-1]
+            if i+1 < len(sentences):
+                right_context = sentences[i+1]
+            contexts.append(Context(left_context, sentence, right_context))
+        return contexts
+
+    def _find_uncached_sentences(self, contexts):
+        indices = []
+        for i, context in enumerate(contexts):
+            if context.center not in self.cache:
+                if i > 0:
+                    contexts[i-1].skip = True
+                indices.append(i)
+                if i+1 < len(contexts):
+                    contexts[i+1].skip = True
+            else:
+                context.skip = False
+                context.cached = True
+        return indices
+
+    def _cache_all_sentences(self, original, model_output):
+        for key, value in zip(nltk.sent_tokenize(original), nltk.sent_tokenize(model_output)):
+            self.cache[key] = value
+
+    def _simplify_no_cache(self, user_input):
+        output = ""
+        simplified = run_simplification(
+            user_input, 
+            self.model, 
+            self.tokenizer,
+            self.ranker, 
+            self.max_seq_length, 
+            self.threshold, 
+            self.num_selections)
+        output = simplified
+        self._cache_all_sentences(user_input, simplified)
+        return output
+
+    def _simplify_with_cache(self, contexts, uncached):
+        output = ""
+        for i, context in enumerate(contexts):
+            if not context.cached:
+                simplified = run_simplification(
+                    context.to_input(), 
+                    self.model, 
+                    self.tokenizer,
+                    self.ranker, 
+                    self.max_seq_length, 
+                    self.threshold, 
+                    self.num_selections)
+                dict_value = self._extract_center(simplified, context)
+                self.cache[context.center] = dict_value
+                output += simplified
+            elif not context.skip:
+                output += self.cache[context.center]
+            output += " "
+        return output
+
+    def _context_to_input(self, context, prev_sentence):
+        bert_input = ""
+        for i, sentence in enumerate(context):
+            if i == 0 and prev_sentence:
+                bert_input += prev_sentence + " "
+            else:
+                bert_input += sentence + " "
+        return bert_input
+
+    def _extract_center(self, model_output, context):
+        sentences = nltk.sent_tokenize(model_output)
+        if context.left == "":
+            return sentences[0]
+        else:
+            return sentences[1]
+
+    def run_test_case(self, input_sentence, target=""):
+        print("----------------------------------------")
+        print("INPUT: " + input_sentence)
+        print("TARGET: " + target)
+        start = time.perf_counter()
+        output = self.simplify(input_sentence)
+        end = time.perf_counter()
+        print("BERT: " + output)
+        print()
+        if target:
+            print("BLEU: ", sentence_bleu(output, target, weights=[1]))
+        print("Time Taken: ", end-start)
+        print("----------------------------------------")
+
+    def simplify(self, user_input,):
+        contexts = self._create_context_mapping(user_input)
+        uncached_sentences = self._find_uncached_sentences(contexts)
+        output = ""
+        if len(uncached_sentences) == len(nltk.sent_tokenize(user_input)):
+            output = self._simplify_no_cache(user_input)
+        else:
+            output = self._simplify_with_cache(contexts, uncached_sentences)
+        return output
 
     def replacement_list(self, word, sentence):
         return list_replacements(
@@ -702,12 +820,17 @@ class BERT_LS:
 if __name__ == "__main__":
     bert = BERT_LS()
     print(bert.replacement_list("verses", "John composed these verses."))
-    print("The cat perched on the mat. ->", bert.simplify("The cat perched on the mat."))
-    print("TARGET: The cat sat on the mat.")
-    print("John composed these verses. ->", bert.simplify("John composed these verses."))
-    print("TARGET: John wrote these poems.")
-    print()
+    bert.run_test_case("John composed these verses.", "John wrote these poems.")
+    bert.run_test_case("The cat perched on the mat.", "The cat sat on the mat.")
+    bert.run_test_case(
+        "Since its founding, the United States has relied on citizen participation to govern at the local, state, and national levels. This civic engagement ensures that representative democracy will continue to flourish and that people will continue to influence government. In the early nineteenth century, agitated citizens called for the removal of property requirements for voting so poor white men could participate in government just as wealthy men could.",
+        "Since its founding, the United States has relied on citizen support to govern at the local, state, and national levels. This civic commitment ensures that representative democracy will continue to grow and that people will continue to guide government. In the early nineteenth century, agitated citizens called for the removal of property requirements for voting so poor white men could participate in government just as prosperous men could."
+        )
+    bert.run_test_case(
+        "Since its founding, the USA has relied on citizen participation to govern at the local, state, and national levels. This civic engagement ensures that representative democracy will continue to flourish and that people will continue to influence government. In the early nineteenth century, agitated citizens called for the removal of property requirements for voting so poor white men could participate in government just as wealthy men could.",
+        "Since its founding, the USA has relied on citizen support to govern at the local, state, and national levels. This civic commitment ensures that representative democracy will continue to grow and that people will continue to guide government. In the early nineteenth century, agitated citizens called for the removal of property requirements for voting so poor white men could participate in government just as prosperous men could."
+        )
+
     while True:
         sentence = input("Enter a sentence: ")
-        print("Simplified sentence:")
-        print(bert.simplify(sentence))
+        bert.run_test_case(sentence)
