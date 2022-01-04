@@ -10,7 +10,7 @@ def index(request):
     params= {
         'input_str':'',
         'output_str':'',
-        'highlight_word':[],
+        #'highlight_word':[],
     }
     return render(request, 'board/index.html', params)
 
@@ -21,12 +21,9 @@ def Ajax_form(request):
     JsonResponse(params)で動作させる（ページの再読み込みをしない）．
     一文字入力すると選択がtextareaから外れてしまう問題を解消．
     """
-    #input_str = request.GET.get('input_str')
     input_str=request.POST.get("input_str")
     try:
-        #output_str = bert_ls(input_str)
-        #sample: The cat perched on the mat.
-        output_str = input_str.replace("perched", "sat")
+        output_str = bert_ls(input_str)
     except Exception as e:
         output_str=f"err: {e}"
     
@@ -36,7 +33,6 @@ def Ajax_form(request):
         'output_str':output_str,
         #'highlight_words_list':highlight_words_list,
         }
-    #return render(request, 'board/index.html', params)
     return JsonResponse(params)
 
 

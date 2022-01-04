@@ -22,8 +22,8 @@
             <form id="id_input_form" method="POST" action="{% url 'ajax_form' %}">
                 {% csrf_token %}
                 Input
-                <textarea name="input_str" id="id_input_str" rows="4" cols="40" placeholder="Please input a sentence" onkeyup='document.getElementById("id_submit").click()'>{{input_str}}</textarea>
-                <input type="submit" value="Input" id="id_submit">
+                <textarea name="input_str" id="id_input_str" rows="4" cols="40" placeholder="Please input a sentence">{{input_str}}</textarea>
+                <input type="submit" value="Input" id="id_submit" style="display:hidden;">
             </form>
             </div>
         </div>
@@ -33,7 +33,7 @@
             Output
             <p name="output_str" id="id_output_str">{{output_str}}</p>
             <p class="controlpane">
-            <input type="button" value="ハイライトONにする" id="btn-onoff">
+            <input type="button" value="ハイライトONにする" id="btn-onoff" style="display:none;">
             </p>
             </div>
         </div>
@@ -114,42 +114,56 @@ document.getElementById("btn-onoff").onclick  = highlightcheck;
 // 以下でjQueryを使用
 // textareaに入力途中の内容を取得
 $('#id_input_str').focus();
+//
+/*
+var flg=true;
+//textareaにonkeyup='document.getElementById("id_submit").click()'を追加
 $('#id_input_form').on('submit', e => {
     e.preventDefault();
-    $.ajax({
-        'url': '{% url "ajax_form" %}',
-        'type': 'POST',
-        'data': {
-            'input_str': $('#id_input_str').val(),
-        },
-        'dataType': 'json'
-    }).done(response => {
-        $('#id_output_str').empty();
-        $('#id_output_str').append(response.output_str);
-    });
+    if (flg && $('#id_input_str').val().length > 0){
+        flg=false;
+        $.ajax({
+            'url': '{% url "ajax_form" %}',
+            'type': 'POST',
+            'data': {
+                'input_str': $('#id_input_str').val(),
+            },
+            'dataType': 'json'
+        }).done(response => {
+            $('#id_output_str').empty();
+            $('#id_output_str').append(response.output_str);
+            flg=true
+        });
+    }
 });
-
+*/
 // 一定の時間間隔で処理したい場合は以下を利用
-/*
+//textareaのonkeyup='document.getElementById("id_submit").click()'を削除
+
+var flg=true;
 window.onload = function(){
   //1000ミリ秒（1秒）毎に関数「process()」を呼び出す
   setInterval("process()", 5000);
 }
 //$('#id_input_form').on('submit' ... に対応
 function process(){
-    $.ajax({
-        'url': '{% url "ajax_form" %}',
-        'type': 'POST',
-        'data': {
-            'input_str': $('#id_input_str').val(),
-        },
-        'dataType': 'json'
-    }).done(response => {
-        $('#id_output_str').empty();
-        $('#id_output_str').append(response.output_str);
-    });
+    if (flg && $('#id_input_str').val().length > 0){
+        flg=false;
+        $.ajax({
+            'url': '{% url "ajax_form" %}',
+            'type': 'POST',
+            'data': {
+                'input_str': $('#id_input_str').val(),
+            },
+            'dataType': 'json'
+        }).done(response => {
+            $('#id_output_str').empty();
+            $('#id_output_str').append(response.output_str);
+            flg=true;
+        });
+    }
 }
-*/
+
 </script>
 </body>
 </html>
