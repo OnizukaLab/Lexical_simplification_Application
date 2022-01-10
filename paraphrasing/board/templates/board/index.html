@@ -21,9 +21,11 @@
             <div class="wrap_inner">
             <form id="id_input_form" method="POST" action="{% url 'ajax_form' %}">
                 {% csrf_token %}
-                Input
-                <textarea name="input_str" id="id_input_str" rows="4" cols="40" placeholder="Please input a sentence">{{input_str}}</textarea>
+                Input (<span name="detected_language" id="detected_language">{{detected_language}}</span>)
+                <textarea name="input_str" id="id_input_str" rows="4" cols="40" placeholder="Please input a sentence" onkeyup=process()>{{input_str}}</textarea>
             </form>
+            平易化したい単語を選択
+            <div id="split-result"></div>
             </div>
         </div>
         <br/>
@@ -38,6 +40,8 @@
         </div>
     </div>
     </div>
+    <p>debug</p>
+    <p id="debug_area"></p>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script>
@@ -111,6 +115,59 @@ function highlightcheck() {
 document.getElementById("btn-onoff").onclick  = highlightcheck;
 
 // 以下でjQueryを使用
+original_split = []
+button_list    = []
+checked_list   = []
+replace_words  = []
+// #simplification-result に結果を表示する
+var update_output = function() {
+    $('#id_output_str').html('');
+    for(i = 0; i < original_split.length; i++) {
+        if(checked_list[i] == 1)
+            $('#id_output_str').append('<span class="changed">' + replace_words[i] + '</span> ');
+        else
+            $('#id_output_str').append(original_split[i] + ' ');
+    }
+};
+// Step 2. 単語が押された時
+var word_selected = function() {
+    // sentence = $input_sentence.val();
+    //sentence = $('#id_input_str').val();
+    $this = $(this);
+    word = $this.html();
+    idx = +$this.attr('data');
+
+    if($this.hasClass('selected')) { // すでに選択されてたら
+        checked_list[idx] = 0;
+        update_output();
+    }
+    else { // 単語が選択されたら
+        for(sentence = '', i = 0; i < original_split.length; i++)
+            sentence += checked_list[i] ? replace_words[i] : original_split[i];
+        checked_list[idx] = 1;
+        console.log(sentence);
+        $.ajax({
+            'url': '{% url "ajax_form" %}',
+            'type':'POST',
+            'data':{
+                'input_str': $('#id_input_str').val(),
+                'sentence': sentence,
+                'idx': idx
+            }
+        })
+        .done( (data) => {
+            console.log(data.output_str);
+            replace_words[idx] = data.output_str;
+            $('#debug_area').empty();
+            $('#debug_area').append(data.output_str);
+            update_output()
+        })
+        .fail( (data) => { console.log(data); } );
+    }
+    $this.toggleClass('selected');
+};
+
+
 // textareaに入力途中の内容を取得
 $('#id_input_str').focus();
 //
@@ -136,15 +193,16 @@ $('#id_input_form').on('submit', e => {
     }
 });
 */
-
 // 一定の時間間隔で処理したい場合は以下を利用
 //textareaのonkeyup='document.getElementById("id_submit").click()'を削除
-
 var flg=true;
+/*
 window.onload = function(){
   //1000ミリ秒（1秒）毎に関数「process()」を呼び出す
   setInterval("process()", 5000);
 }
+*/
+
 //$('#id_input_form').on('submit' ... に対応
 function process(){
     if (flg && $('#id_input_str').val().length > 0){
@@ -157,12 +215,32 @@ function process(){
             },
             'dataType': 'json'
         }).done(response => {
-            $('#id_output_str').empty();
-            $('#id_output_str').append(response.output_str);
+            $('#detected_language').empty();
+            $('#detected_language').append(response.detected_language);
+            if (response.detected_language=="English"){
+                $('#id_output_str').empty();
+                $('#id_output_str').append(response.output_str);
+                $('#split-result').empty();
+            }else{
+                $('#id_output_str').empty();
+                $('#id_output_str').append(response.output_str);
+                console.log(response.splited);
+                [original_split, button_list] = JSON.parse(response.splited);
+                length = original_split.length;
+                checked_list = Array(length).fill(0);
+                replace_words = Array(length).fill('');
+                $('#split-result').html('');
+                for(let i = 0; i < length; i++)
+                    $('#split-result').append('<button class="word-piece" data="' + i + '">' + original_split[i] + '</button> ');
+                $('.word-piece').click(word_selected);
+            }
             flg=true;
         });
+        flg=true;
+        
     }
 }
+
 
 </script>
 </body>

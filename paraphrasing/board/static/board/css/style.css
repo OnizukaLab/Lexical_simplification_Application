@@ -80,3 +80,17 @@ span.mark2 {
     background-color: white; 
     box-shadow: 0 4px 4px rgb(0 0 0 / 20%);
 } /* ハイライトの色指定 */
+
+
+button.word-piece {
+	color: red;
+	border: solid 1px #ccc;
+	border-radius: 4px;
+	cursor: pointer;
+}
+
+button.word-piece.selected {
+	color: #fefefe;
+	background: red;
+	border-color: red;
+}
