@@ -6,7 +6,6 @@ import os
 # パスを通す
 current_dir=os.getcwd()
 sys.path.append(f"{current_dir}/Japanese")
-sys.path.append(f"{current_dir}/Japanese/data")
 
 # =======================================================
 #   Functions for English version
@@ -102,15 +101,15 @@ def Ajax_form(request):
     try:
         if p.fullmatch(input_str): # 入力が英語の場合
             detected_language = "English"
-            #output_str = input_str
+            #output_str = input_str # 開発用
             output_str = bert_ls(input_str)
         else: # 入力が日本語の場合
             detected_language = "日本語"
             output_str = input_str
             splited = split_sentence(input_str)
-            if "sentence" in request:
+            if "sentence" in request.POST:
                 sentence=request.POST.get("sentence")
-                idx=request.POST.get("idx")
+                idx=int(request.POST.get("idx"))
                 sentence_list = mecab_wakati.parse(sentence).rstrip('\n').split()
                 # このoutput_strは単語（他は文章）
                 output_str = simplification_sentence(sentence, sentence_list[idx])

@@ -24,7 +24,7 @@
                 Input (<span name="detected_language" id="detected_language">{{detected_language}}</span>)
                 <textarea name="input_str" id="id_input_str" rows="4" cols="40" placeholder="Please input a sentence" onkeyup=process()>{{input_str}}</textarea>
             </form>
-            平易化したい単語を選択
+            <p id="word_selection"  style="display:none;">平易化したい単語を選択</p>
             <div id="split-result"></div>
             </div>
         </div>
@@ -40,8 +40,6 @@
         </div>
     </div>
     </div>
-    <p>debug</p>
-    <p id="debug_area"></p>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script>
@@ -158,8 +156,6 @@ var word_selected = function() {
         .done( (data) => {
             console.log(data.output_str);
             replace_words[idx] = data.output_str;
-            $('#debug_area').empty();
-            $('#debug_area').append(data.output_str);
             update_output()
         })
         .fail( (data) => { console.log(data); } );
@@ -218,10 +214,12 @@ function process(){
             $('#detected_language').empty();
             $('#detected_language').append(response.detected_language);
             if (response.detected_language=="English"){
+                $('#word_selection').css('display', 'none');
                 $('#id_output_str').empty();
                 $('#id_output_str').append(response.output_str);
                 $('#split-result').empty();
             }else{
+                $('#word_selection').css('display', 'inline');
                 $('#id_output_str').empty();
                 $('#id_output_str').append(response.output_str);
                 console.log(response.splited);
@@ -236,7 +234,7 @@ function process(){
             }
             flg=true;
         });
-        flg=true;
+        //flg=true;
         
     }
 }
