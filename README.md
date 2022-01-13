@@ -1,4 +1,4 @@
-# Paraphrasing2021
+# 語彙平易化アプリケーション
 2021年度M1の語彙言い換えチーム．
 
 # アプリケーションの概要
@@ -6,8 +6,8 @@
 ![Demo](/images/demo1_gif.gif "demo")
 
 
-英語の語彙を平易に言い換えるWebアプリケーションです。
-モデルは文脈に沿った言い換えが可能な**BERT LS**を使用し、ブラウザのシンプルなUIで語彙言い換え操作を行うことができます。
+英語・日本語の語彙を平易に言い換えるWebアプリケーションです。
+英語平易化モデルは文脈に沿った言い換えが可能な**BERT LS**を使用し、ブラウザのシンプルなUIで語彙言い換え操作を行うことができます。
 入力は単語/文/文章で、出力はそれに対応する言い換え処理後の単語/文/文章です。
 
 # 準備
@@ -19,7 +19,7 @@ git clone
 ```
 
 でクローンした後、
-BERT-LSを使うために、以下の3つのファイルをダウンロードし、`paraphrasing/BERT_resources`に置く。
+英語平易化に利用するBERT-LSを使うために、以下の3つのファイルをダウンロードし、`paraphrasing/BERT_resources`に置く。
 
 * [crawl-300d-2M-subword.vec](https://dl.fbaipublicfiles.com/fasttext/vectors-english/crawl-300d-2M-subword.zip) (解凍時に存在する.binは不要)
 
@@ -30,7 +30,9 @@ BERT-LSを使うために、以下の3つのファイルをダウンロードし
 
 ## ディレクトリ構成
 
-Paraphrasing2021/
+※主要ファイルのみ記載
+
+Lexical_simplification_Application/
 
 ┣ paraphrasing/
 
@@ -66,7 +68,7 @@ Paraphrasing2021/
 
 ## Dockerのビルドとシステムの起動
 
-`Paraphrasing2021`のディレクトリに入り、
+`Lexical_simplification_Application`のディレクトリに入り、
 
 ```
 docker build -t <イメージ名> .
@@ -99,7 +101,7 @@ http://<IPアドレス>:<ポートA>/
 ## 例
 
 IPアドレスが10.0.16.12のサーバで動作させる場合、
-`Paraphrasing2021`のディレクトリに入り、
+`Lexical_simplification_Application`のディレクトリに入り、
 
 ```
 docker build -t paraphrasing_img .
@@ -142,15 +144,6 @@ django 3.2.3
 ```
 python -m spacy download en_core_web_sm
 ```
-
-NLTK - punkt:
-```
-import nltk
-nltk.download('punkt')
-nltk.download('averaged_perceptron_tagger')
-```
-
-## Installation
  
 Requirementで列挙したライブラリなどのインストール方法
  
@@ -158,12 +151,19 @@ Requirementで列挙したライブラリなどのインストール方法
 pip install -r requirements.txt
 ```
  
+NLTK - punktのインストールはPythonで以下を実行:
+```
+import nltk
+nltk.download('punkt')
+nltk.download('averaged_perceptron_tagger')
+```
+
 ## システムの起動
  
 実行方法など、基本的な使い方：
  
 ```
-cd Paraphrasing2021/paraphrasing
+cd Lexical_simplification_Application/paraphrasing
 ```
 
 ```
