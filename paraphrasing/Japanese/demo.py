@@ -14,13 +14,14 @@ from pprint import pprint
 #lexical_simplification.pyから
 def load(args): 
 	#word2vec = load_word2vec(args.embedding)
-	word2vec = None
+	word2vec = KeyedVectors.load_word2vec_format("Japanese/embeddings/glove.txt", binary=False)
+	
 	#w2v_vocab = set(word2vec.vocab.keys()) if word2vec else {}
 	w2v_vocab = set([])
 	#language_model = load_language_model(args.language_model)
 	language_model = None
 	mecab_wakati = MeCab.Tagger('-Owakati')
-	mecab = MeCab.Tagger('')
+	mecab = MeCab.Tagger('-Ochasen')
 	word2level = load_word2level(args.word_to_complexity)
 	#word2synonym = load_word2synonym(args.synonym_dict)
 	word2synonym=None
@@ -188,7 +189,7 @@ def ranking(target, candidates, sentence, word2vec, w2v_vocab, word2freq, freq_t
 		ranktable.append( make_ranking([word2vec.similarity(target, c) for c in candidates]) )
 		ranktable.append( make_ranking([context_sim(sentence, c) for c in candidates]) )
 		ranktable.append( make_ranking([information_contents(word2freq, freq_total, target) - information_contents(word2freq, freq_total, c) for c in candidates]) )
-	if ranking_type in {'glavas', 'language-model', 'ours'}:
+	if ranking_type in {'language-model', 'ours'}:
 		ranktable.append( make_ranking([language_model_score(sentence, target, c, attached_words) for c in candidates]) )
 
 	if ranking_type in {'ours'}:
