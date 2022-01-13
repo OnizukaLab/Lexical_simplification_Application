@@ -27,9 +27,9 @@ import MeCab
 import kenlm
 class Args:
 	def __init__(self):
-		self.candidate			= 'bert'
+		self.candidate			= 'glavas'
 		self.simplicity			= 'point-wise'
-		self.ranking			= 'bert'
+		self.ranking			= 'glavas'
 		self.most_similar       = 10
 		self.cos_threshold      = 0.0
 		self.embedding			= 'Japanese/data/skipgram.bin'
@@ -112,7 +112,8 @@ def Ajax_form(request):
                 idx=int(request.POST.get("idx"))
                 sentence_list = mecab_wakati.parse(sentence).rstrip('\n').split()
                 # このoutput_strは単語（他は文章）
-                output_str = simplification_sentence(sentence, sentence_list[idx])
+                candidate = simplification_sentence(sentence, sentence_list[idx])
+                output_str = input_str.replace(sentence, candidate)
     except Exception as e:
         output_str=f"err: {e}"
     
