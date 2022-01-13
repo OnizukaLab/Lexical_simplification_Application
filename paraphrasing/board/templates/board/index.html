@@ -251,8 +251,11 @@ function process(){
                 checked_list = Array(length).fill(0);
                 replace_words = Array(length).fill('');
                 $('#split-result').html('');
-                for(let i = 0; i < length; i++)
-                    $('#split-result').append('<button class="word-piece" data="' + i + '">' + original_split[i] + '</button> ');
+                for(let i = 0; i < length; i++){
+                    if (button_list[i]==1){
+                        $('#split-result').append('<button class="word-piece" data="' + i + '">' + original_split[i] + '</button> ');
+                    }
+                }
                 $('.word-piece').click(word_selected);
             }
             flg=true;
