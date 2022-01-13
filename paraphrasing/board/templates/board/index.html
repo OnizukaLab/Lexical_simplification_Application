@@ -122,9 +122,9 @@ var update_output = function() {
     $('#id_output_str').html('');
     for(i = 0; i < original_split.length; i++) {
         if(checked_list[i] == 1)
-            $('#id_output_str').append('<span class="changed">' + replace_words[i] + '</span> ');
+            $('#id_output_str').append('<span class="changed">' + replace_words[i] + '</span>');
         else
-            $('#id_output_str').append(original_split[i] + ' ');
+            $('#id_output_str').append(original_split[i]);
     }
 };
 // Step 2. 単語が押された時
@@ -215,6 +215,8 @@ function get_input_time(){ // キー操作があったら呼び出し
 }
 
 //$('#id_input_form').on('submit' ... に対応
+
+var cached_str = "";
 function process(){
     end_time = Date.now();
     current_string = $('#id_input_str').val();
@@ -222,7 +224,7 @@ function process(){
         // process()の定期呼び出しを停止
         clearInterval("process()");
         flg_setInterval=false
-    }else if (flg && end_time-start_time > 1000 && $('#id_input_str').val().length > 0 && current_string != backup_string){
+    }else if (flg && end_time-start_time > 1000 && current_string != backup_string){
         backup_string = $('#id_input_str').val();
         flg=false;
         $('#loading').css('display', 'inline');

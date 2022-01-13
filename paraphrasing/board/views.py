@@ -112,8 +112,8 @@ def Ajax_form(request):
                 idx=int(request.POST.get("idx"))
                 sentence_list = mecab_wakati.parse(sentence).rstrip('\n').split()
                 # このoutput_strは単語（他は文章）
-                candidate = simplification_sentence(sentence, sentence_list[idx])
-                output_str = input_str.replace(sentence, candidate)
+                output_str = simplification_sentence(sentence, sentence_list[idx])
+                
     except Exception as e:
         output_str=f"err: {e}"
     
