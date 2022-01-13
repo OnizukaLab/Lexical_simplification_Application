@@ -1,3 +1,4 @@
+
 import sys
 import argparse
 import math
@@ -8,6 +9,9 @@ import kenlm
 from word_complexity import load_word2vec, load_freqs
 from simple_synonym import load_word2level, load_synonym
 from collections import defaultdict
+from transformers.tokenization_bert_japanese import BertJapaneseTokenizer #追加
+from transformers import BertTokenizer, BertForMaskedLM
+import torch
 
 from pprint import pprint
 
@@ -29,9 +33,10 @@ def load(args):
 	#word2freq = word2freq[0] if word2freq else None
 	freq_total = sum(word2freq.values()) if word2freq else 0
 	simple_synonym = load_simple_synonym(args.simple_synonym)
-	#bert = load_bertmodel(args.pretrained_bert)
+	bert = load_bertmodel(args.pretrained_bert) #BERT不使用時はコメントアウト
+	device=args.device #追加　
 	using_vocab = w2v_vocab
-	return word2vec, w2v_vocab, mecab_wakati, mecab, language_model, word2level, word2synonym, word2freq, freq_total, simple_synonym, w2v_vocab
+	return word2vec, w2v_vocab, mecab_wakati, mecab, language_model, word2level, word2synonym, word2freq, freq_total, simple_synonym, w2v_vocab , bert , device
 """
 #demo.pyから
 def load(args): 
@@ -58,18 +63,18 @@ def load_bertmodel(modelname):
 		tokenizer, model = None, None
 	return tokenizer, model
 def main(params, args):
-	# args = parse()
+	 #args = parse()
 	input_sentence_file = args.data + '/Sentence/sentences.txt'
 	target_word_file = args.data + '/BCCWJ_target_location/location.txt'
 	reference_file = args.data + '/substitutes/mle_rank.csv'
 
-	# word2vec = load_word2vec(args.embedding)
-	# w2v_vocab = set(word2vec.vocab.keys())
-	# language_model = kenlm.Model(args.language_model)
-	# mecab = MeCab.Tagger("" if not args.mecab_dict else "-d " + args.mecab_dict)
+	 #word2vec = load_word2vec(args.embedding)
+	 #w2v_vocab = set(word2vec.vocab.keys())
+	 #language_model = kenlm.Model(args.language_model)
+	 #mecab = MeCab.Tagger("" if not args.mecab_dict else "-d " + args.mecab_dict)
 	# word2level = load_word2level(args.word_to_complexity)
-	# word2synonym = load_word2synonym(args.synonym_dict, word2level)
-	# word2freq = load_freqs(args.word_to_freq, 'none')[0]
+	 #word2synonym = load_word2synonym(args.synonym_dict, word2level)
+	 #word2freq = load_freqs(args.word_to_freq, 'none')[0]
 
 	word2vec, w2v_vocab, mecab_wakati, mecab, language_model, word2level, word2synonym, word2freq, freq_total, simple_synonym, w2v_vocab = params
 
@@ -93,9 +98,9 @@ def main(params, args):
 			else:
 				attached_words = tuple(phrase.replace(target if target in phrase else word, '\t').split('\t'))
 				attached_words = attached_words if len(attached_words) == 2 else ('','')
-				candidates = pick_candidates(target, args.most_similar, word2vec, w2v_vocab, word2synonym, args.candidate, args.cos_threshold)
+				candidates,scores = pick_candidates(target, args.most_similar, word2vec, w2v_vocab, word2synonym, args.candidate, args.cos_threshold)
 				candidates = pick_simple_before_ranking(target, candidates, word2freq, freq_total, word2level, simple_synonym, args.simplicity)
-				candidatelist = ranking(target, candidates, sentence, word2vec, w2v_vocab, word2freq, freq_total, language_model, attached_words, mecab, word2synonym, args.ranking)
+				candidatelist = ranking(target, candidates, scores, word2vec, w2v_vocab, word2freq, freq_total, language_model, attached_words, mecab, word2synonym, args.ranking)
 				candidatelist = pick_simple(candidatelist, args.simplicity, target, word2level, word2freq, freq_total, simple_synonym)
 				left,right = attached_words
 				rst = ",".join([" ".join([left + c[1] + right for c in rank]) for rank in candidatelist])
@@ -107,16 +112,39 @@ def main(params, args):
 
 
 # 候補をとってくる
-def pick_candidates(target, most_similar, word2vec, w2v_vocab, word2synonym, candidate_type, cos_threshold):
+def pick_candidates(target, most_similar, word2vec, w2v_vocab, word2synonym, candidate_type, cos_threshold, bert, device, sentence):
 	candidates = list()
+	bert_score=[]
 	if candidate_type == 'glavas' or candidate_type == 'glavas+synonym':
 		candidates += [c for c,_ in word2vec.most_similar(target, topn=most_similar)]
 	if candidate_type == 'synonym' or candidate_type == 'glavas+synonym':
 		candidates += [c for c,_ in word2synonym[target] if c in w2v_vocab]
-	elif candidate_type == 'oracle':
-		pass # 未実装
-	candidates = [c for c in candidates if word2vec.similarity(c, target) >= cos_threshold]
-	return candidates
+	if candidate_type in 'bert':#BERT版追加
+		for c,v in zip(*word_to_bertsynonym(device, bert, target, sentence, most_similar)):
+			if c in w2v_vocab:
+				candidates.append(c)
+				bert_score.append(v)
+	#candidates = [c for c in candidates if word2vec.similarity(c, target) >= cos_threshold]
+	scores = {'bert': bert_score}#BERT用
+	return candidates,scores
+
+def word_to_bertsynonym(device, bert, target, sentence, topk): #BERT版で追加
+	tokenizer, model = bert
+	sentence = ''.join([w['surface'] for w in sentence])
+	line = sentence.split(target)
+	input_string = sentence + tokenizer.sep_token + line[0] + tokenizer.mask_token + ''.join(line[1:])
+	input_ids = tokenizer.encode(input_string, return_tensors='pt')
+	if device != -1:
+		cuda = 'cuda:' + str(device)
+		input_ids = input_ids.to(cuda)
+		model.to(cuda)
+	masked_index = torch.where(input_ids == tokenizer.mask_token_id)[1].tolist()[0]
+	result = model(input_ids)
+	pred = result[0][:, masked_index].topk(topk)
+	pred_ids, pred_values = pred.indices.tolist()[0], pred.values.tolist()[0]
+	target_id = tokenizer.convert_tokens_to_ids(target)
+	candidates = tokenizer.convert_ids_to_tokens([i for i in pred_ids if i != target_id])
+	return candidates, pred_values
 
 
 # 提案手法では、ランキングの前に難易度判定を行う
@@ -149,7 +177,7 @@ def load_simple_synonym(filename):
 
 
 # ランキング
-def ranking(target, candidates, sentence, word2vec, w2v_vocab, word2freq, freq_total, language_model, attached_words, mecab, word2synonym, ranking_type):
+def ranking(target, candidates, sentence, word2vec, w2v_vocab, word2freq, freq_total, language_model, attached_words, mecab, word2synonym, ranking_type,bert):
 	def context_sim(sentence, candidate):
 		sentence_tk = [(token["surface"], token["pos"]) for token in sentence]
 		similarity_list = [word2vec.similarity(candidate, context) for context, pos in sentence_tk if is_content(pos) and context != candidate and context in w2v_vocab]
@@ -193,6 +221,8 @@ def ranking(target, candidates, sentence, word2vec, w2v_vocab, word2freq, freq_t
 
 	if ranking_type in {'ours'}:
 		ranktable.append( make_ranking([get_p_score(word2synonym, target, c) for c in candidates]) )
+	if ranking_type in {'bert'}:   #BERT版追加                          
+		ranktable.append( make_ranking(scores['bert']) )
 
 
 	sum_rank = [sum(f) for f in zip(*ranktable)]

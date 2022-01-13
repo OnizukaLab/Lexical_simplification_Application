@@ -4,14 +4,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Paraphrasing</title>
+    <title>Lexical Simplification</title>
     <link rel="stylesheet" type="text/css" href="{% static 'board/css/style.css' %}">
 </head>
 <body>
     <div class="hero-header">
         <div class="wrap">
             <h1 class="hero-header_visual">
-                <p>Paraphrasing</p>
+                <p>Lexical Simplification</p>
             </h1>
         </div>
     </div>
@@ -22,16 +22,16 @@
             <form id="id_input_form" method="POST" action="{% url 'ajax_form' %}">
                 {% csrf_token %}
                 Input (<span name="detected_language" id="detected_language">{{detected_language}}</span>)
-                <textarea name="input_str" id="id_input_str" rows="4" cols="40" placeholder="Please input a sentence" onkeyup=process()>{{input_str}}</textarea>
+                <textarea name="input_str" id="id_input_str" rows="4" cols="40" placeholder="Please input a sentence" onkeyup=get_input_time()>{{input_str}}</textarea>
             </form>
-            平易化したい単語を選択
+            <p id="word_selection"  style="display:none;">平易化したい単語を選択</p>
             <div id="split-result"></div>
             </div>
         </div>
         <br/>
         <div class="wrap_outer">
             <div class="wrap_inner">
-            Output
+            Output <span id="loading" style="display:none;">(loading...)</span>
             <p name="output_str" id="id_output_str">{{output_str}}</p>
             <p class="controlpane">
             <input type="button" value="ハイライトONにする" id="btn-onoff" style="display:none;">
@@ -40,8 +40,6 @@
         </div>
     </div>
     </div>
-    <p>debug</p>
-    <p id="debug_area"></p>
 
 <script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.0/jquery.min.js"></script>
 <script>
@@ -158,8 +156,6 @@ var word_selected = function() {
         .done( (data) => {
             console.log(data.output_str);
             replace_words[idx] = data.output_str;
-            $('#debug_area').empty();
-            $('#debug_area').append(data.output_str);
             update_output()
         })
         .fail( (data) => { console.log(data); } );
@@ -199,14 +195,37 @@ var flg=true;
 /*
 window.onload = function(){
   //1000ミリ秒（1秒）毎に関数「process()」を呼び出す
-  setInterval("process()", 5000);
+  setInterval("process()", 1000);
 }
 */
 
+var start_time = Date.now();
+var end_time = Date.now();
+var backup_string = $('#id_input_str').val();
+var current_string = $('#id_input_str').val();
+var flg_setInterval=false;
+
+function get_input_time(){ // キー操作があったら呼び出し
+    start_time = Date.now();
+    if (flg_setInterval == false){
+        // process()の定期呼び出しを開始
+        setInterval("process()", 1000);
+        flg_setInterval=true
+    }
+}
+
 //$('#id_input_form').on('submit' ... に対応
 function process(){
-    if (flg && $('#id_input_str').val().length > 0){
+    end_time = Date.now();
+    current_string = $('#id_input_str').val();
+    if (end_time-start_time > 10000 && current_string == backup_string){
+        // process()の定期呼び出しを停止
+        clearInterval("process()");
+        flg_setInterval=false
+    }else if (flg && end_time-start_time > 1000 && $('#id_input_str').val().length > 0 && current_string != backup_string){
+        backup_string = $('#id_input_str').val();
         flg=false;
+        $('#loading').css('display', 'inline');
         $.ajax({
             'url': '{% url "ajax_form" %}',
             'type': 'POST',
@@ -218,10 +237,12 @@ function process(){
             $('#detected_language').empty();
             $('#detected_language').append(response.detected_language);
             if (response.detected_language=="English"){
+                $('#word_selection').css('display', 'none');
                 $('#id_output_str').empty();
                 $('#id_output_str').append(response.output_str);
                 $('#split-result').empty();
             }else{
+                $('#word_selection').css('display', 'inline');
                 $('#id_output_str').empty();
                 $('#id_output_str').append(response.output_str);
                 console.log(response.splited);
@@ -235,8 +256,9 @@ function process(){
                 $('.word-piece').click(word_selected);
             }
             flg=true;
+            $('#loading').css('display', 'none');
         });
-        flg=true;
+        //flg=true;
         
     }
 }

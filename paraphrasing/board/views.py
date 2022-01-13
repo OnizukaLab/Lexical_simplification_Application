@@ -1,3 +1,4 @@
+
 from django.shortcuts import render
 from django.http import JsonResponse
 import sys
@@ -6,7 +7,6 @@ import os
 # パスを通す
 current_dir=os.getcwd()
 sys.path.append(f"{current_dir}/Japanese")
-sys.path.append(f"{current_dir}/Japanese/data")
 
 # =======================================================
 #   Functions for English version
@@ -28,25 +28,26 @@ import MeCab
 import kenlm
 class Args:
 	def __init__(self):
-		self.candidate			= 'bert'
-		self.simplicity			= 'point-wise'
-		self.ranking			= 'bert'
-		self.most_similar       = 10
-		self.cos_threshold      = 0.0
-		self.embedding			= 'Japanese/data/skipgram.bin'
-		self.language_model		= 'Japanese/data/wiki.arpa.bin'
-		self.word_to_complexity	= 'Japanese/data/word2complexity.tsv'
-		self.synonym_dict		= 'Japanese/data/ppdb-10best.tsv'
-		self.word_to_freq		= 'Japanese/data/word2freq.tsv'
-		self.simple_synonym		= 'Japanese/data/ss.pairwise.ours-B.tsv'
-        #self.pretrained_bert    = 'cl-tohoku/bert-base-japanese-whole-word-masking'
+		self.candidate= 'bert'
+		self.simplicity= 'point-wise'
+		self.ranking= 'bert'
+		self.most_similar= 10
+		self.cos_threshold= 0.0
+		self.embedding= 'Japanese/data/skipgram.bin'
+		self.language_model= 'Japanese/data/wiki.arpa.bin'
+		self.word_to_complexity= 'Japanese/data/word2complexity.tsv'
+		self.synonym_dict= 'Japanese/data/ppdb-10best.tsv'
+		self.word_to_freq= 'Japanese/data/word2freq.tsv'
+		self.simple_synonym='Japanese/data/ss.pairwise.ours-B.tsv'
+		self.pretrained_bert='cl-tohoku/bert-base-japanese-whole-word-masking'
+		self.device= 0 #追加
 
 args = Args()
 
 from Japanese.demo import *
 import json
 
-word2vec, w2v_vocab, mecab_wakati, mecab, language_model, word2level, word2synonym, word2freq, freq_total, simple_synonym, w2v_vocab = load(args)
+word2vec, w2v_vocab, mecab_wakati, mecab, language_model, word2level, word2synonym, word2freq, freq_total, simple_synonym, w2v_vocab ,bert, device= load(args)
 
 def split_sentence(sentence:str):
 	sentence_list = mecab_wakati.parse(sentence).rstrip('\n').split()
@@ -69,9 +70,9 @@ def simplification_sentence(sentence:str, target:str):
 	results = list()
 	sentence = morphological_analysis(sentence, mecab)
 
-	candidates = pick_candidates(target, args.most_similar, word2vec, w2v_vocab, word2synonym, args.candidate, args.cos_threshold)
+	candidates, scores = pick_candidates(target, args.most_similar, word2vec, w2v_vocab, word2synonym, args.candidate, args.cos_threshold,bert,device,sentence)
 	candidates = pick_simple_before_ranking(target, candidates, word2freq, freq_total, word2level, simple_synonym, args.simplicity)
-	candidatelist = ranking(target, candidates, sentence, word2vec, w2v_vocab, word2freq, freq_total, language_model, ('',''), mecab, word2synonym, args.ranking)
+	candidatelist = ranking(target, candidates, scores, sentence, word2vec, w2v_vocab, word2freq, freq_total, language_model, ('',''), mecab, bert, args.ranking)
 	candidatelist = pick_simple(candidatelist, args.simplicity, target, word2level, word2freq, freq_total, simple_synonym)
 	rst = ",".join([" ".join([c[1] for c in rank]) for rank in candidatelist])
 
@@ -102,15 +103,15 @@ def Ajax_form(request):
     try:
         if p.fullmatch(input_str): # 入力が英語の場合
             detected_language = "English"
-            output_str = input_str
+            output_str = input_str # 開発用
             #output_str = bert_ls(input_str)
         else: # 入力が日本語の場合
             detected_language = "日本語"
             output_str = input_str
             splited = split_sentence(input_str)
-            if "sentence" in request:
+            if "sentence" in request.POST:
                 sentence=request.POST.get("sentence")
-                idx=request.POST.get("idx")
+                idx=int(request.POST.get("idx"))
                 sentence_list = mecab_wakati.parse(sentence).rstrip('\n').split()
                 # このoutput_strは単語（他は文章）
                 output_str = simplification_sentence(sentence, sentence_list[idx])
@@ -126,6 +127,3 @@ def Ajax_form(request):
         #'highlight_words_list':highlight_words_list,
         }
     return JsonResponse(params)
-
-
-    
