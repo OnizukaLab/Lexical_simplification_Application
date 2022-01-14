@@ -11,3 +11,7 @@ complex_word.txt
 length_half
 pretrained_model/
 *.pyc
+paraphrasing/Japanese/data/wiki.arpa.bin
+paraphrasing/Japanese/data/wiki.arpa
+paraphrasing/Japanese/embeddings/
+
