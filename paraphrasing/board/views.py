@@ -26,26 +26,27 @@ def bert_ls(input_str) -> str:
 import MeCab
 import kenlm
 class Args:
-	def __init__(self):
-		self.candidate			= 'glavas'
-		self.simplicity			= 'point-wise'
-		self.ranking			= 'glavas'
-		self.most_similar       = 10
-		self.cos_threshold      = 0.0
-		self.embedding			= 'Japanese/data/skipgram.bin'
-		self.language_model		= 'Japanese/data/wiki.arpa.bin'
-		self.word_to_complexity	= 'Japanese/data/word2complexity.tsv'
-		self.synonym_dict		= 'Japanese/data/ppdb-10best.tsv'
-		self.word_to_freq		= 'Japanese/data/word2freq.tsv'
-		self.simple_synonym		= 'Japanese/data/ss.pairwise.ours-B.tsv'
-        #self.pretrained_bert    = 'cl-tohoku/bert-base-japanese-whole-word-masking'
+    def __init__(self):
+        self.candidate          = 'bert' # bert or glavas or glavas+synonym or synonymで動作
+        self.simplicity         = 'point-wise'
+        self.ranking            = 'bert' # bert or glavasで動作
+        self.most_similar       = 10
+        self.cos_threshold      = 0.0
+        self.embedding          = "Japanese/embeddings/glove.txt"
+        self.language_model     = 'Japanese/data/wiki.arpa.bin'
+        self.word_to_complexity = 'Japanese/data/word2complexity.tsv'
+        self.synonym_dict       = 'Japanese/data/ppdb-10best.tsv'
+        self.word_to_freq       = 'Japanese/data/word2freq.tsv'
+        self.simple_synonym     = 'Japanese/data/ss.pairwise.ours-B.tsv'
+        self.pretrained_bert    = 'cl-tohoku/bert-base-japanese-whole-word-masking'
+        self.device = 1
 
 args = Args()
 
 from Japanese.demo import *
 import json
 
-word2vec, w2v_vocab, mecab_wakati, mecab, language_model, word2level, word2synonym, word2freq, freq_total, simple_synonym, w2v_vocab = load(args)
+word2vec, w2v_vocab, mecab_wakati, mecab, language_model, word2level, word2synonym, word2freq, freq_total, simple_synonym, w2v_vocab, bert = load(args)
 
 def split_sentence(sentence:str):
 	sentence_list = mecab_wakati.parse(sentence).rstrip('\n').split()
@@ -68,9 +69,9 @@ def simplification_sentence(sentence:str, target:str):
 	results = list()
 	sentence = morphological_analysis(sentence, mecab)
 
-	candidates = pick_candidates(target, args.most_similar, word2vec, w2v_vocab, word2synonym, args.candidate, args.cos_threshold)
+	candidates, scores = pick_candidates(target, args.most_similar, word2vec, w2v_vocab, word2synonym, args.candidate, args.cos_threshold, bert, sentence, args.device)
 	candidates = pick_simple_before_ranking(target, candidates, word2freq, freq_total, word2level, simple_synonym, args.simplicity)
-	candidatelist = ranking(target, candidates, sentence, word2vec, w2v_vocab, word2freq, freq_total, language_model, ('',''), mecab, word2synonym, args.ranking)
+	candidatelist = ranking(target, candidates, sentence, word2vec, w2v_vocab, word2freq, freq_total, language_model, ('',''), mecab, word2synonym, args.ranking, scores)
 	candidatelist = pick_simple(candidatelist, args.simplicity, target, word2level, word2freq, freq_total, simple_synonym)
 	rst = ",".join([" ".join([c[1] for c in rank]) for rank in candidatelist])
 
