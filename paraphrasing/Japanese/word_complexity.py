@@ -104,7 +104,7 @@ def load_freqs(freq_file, scaletype):
 				for k in label2freqs[i]:
 					label2freqs[i][k] = math.log(label2freqs[i][k])
 			elif scaletype == 'normalize':
-				total = sum(label2freq.values())
+				total = sum(label2freqs.values())
 				for k in label2freqs[i]:
 					label2freqs[i][k] = label2freqs[i][k] / total
 	return label2freqs

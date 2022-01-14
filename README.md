@@ -3,7 +3,7 @@
 
 # アプリケーションの概要
 
-![Demo](/images/demo1_gif.gif "demo")
+![Demo](/images/demo_gif.gif "demo")
 
 
 英語・日本語の語彙を平易に言い換えるWebアプリケーションです。
