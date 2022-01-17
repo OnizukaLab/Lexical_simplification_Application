@@ -97,7 +97,7 @@ def word_to_bertsynonym(device, bert, target, sentence, topk):
 	input_string = sentence + tokenizer.sep_token + line[0] + tokenizer.mask_token + ''.join(line[1:])
 	input_ids = tokenizer.encode(input_string, return_tensors='pt')
 	if device.type != "cpu":
-		cuda = 'cuda:' + str(device)
+		cuda = str(device)
 		input_ids = input_ids.to(cuda)
 		model.to(cuda)
 	masked_index = torch.where(input_ids == tokenizer.mask_token_id)[1].tolist()[0]
@@ -132,6 +132,7 @@ def pick_candidates(target, most_similar, word2vec, w2v_vocab, word2synonym, can
 
 # 提案手法では、ランキングの前に難易度判定を行う
 def pick_simple_before_ranking(target, candidates, word2freq, freq_total, word2level, simple_synonym, simplicity_type):
+	"""簡単になっているかを判定"""
 	# if simplicity_type == 'glavas':
 	# 	candidates = [c for c in candidates if information_contents(word2freq, freq_total, c) < information_contents(word2freq, freq_total, target)]
 	if simplicity_type == "point-wise":
@@ -196,14 +197,14 @@ def ranking(target, candidates, sentence, word2vec, w2v_vocab, word2freq, freq_t
 
 	ranktable = list()
 	if ranking_type in {'bert','glavas', 'ours'}:
-		ranktable.append( make_ranking([word2vec.similarity(target, c) for c in candidates]) )
+		ranktable.append( make_ranking([word2vec.similarity(target, c) for c in candidates]) ) # word2vecで類似度を測る
 		#ranktable.append( make_ranking([context_sim(sentence, c) for c in candidates]) )
-		ranktable.append( make_ranking([information_contents(word2freq, freq_total, target) - information_contents(word2freq, freq_total, c) for c in candidates]) )
+		ranktable.append( make_ranking([information_contents(word2freq, freq_total, target) - information_contents(word2freq, freq_total, c) for c in candidates]) ) # wiki内の頻度で簡単さを測る
 	if ranking_type in {'bert','language-model', 'glavas', 'ours'}:
-		ranktable.append( make_ranking([language_model_score(sentence, target, c, attached_words) for c in candidates]) )
+		ranktable.append( make_ranking([language_model_score(sentence, target, c, attached_words) for c in candidates]) ) # KenLMで流暢度を測る
 		pass
 	if ranking_type in {'bert'}:
-		ranktable.append( make_ranking(scores['bert']) )
+		ranktable.append( make_ranking(scores['bert']) ) # 文章のおかしくない率(BERTでのその単語の出やすさ)
 
 	if ranking_type in {'ours'}:
 		ranktable.append( make_ranking([get_p_score(word2synonym, target, c) for c in candidates]) )

@@ -40,7 +40,7 @@ class Args:
         self.word_to_freq       = 'Japanese/data/word2freq.tsv'
         self.simple_synonym     = 'Japanese/data/ss.pairwise.ours-B.tsv'
         self.pretrained_bert    = 'cl-tohoku/bert-base-japanese-whole-word-masking'
-        self.device = 1
+        self.device = -1
 
 args = Args()
 
@@ -48,6 +48,10 @@ from Japanese.demo import *
 import json
 
 word2vec, w2v_vocab, mecab_wakati, mecab, language_model, word2level, word2synonym, word2freq, freq_total, simple_synonym, w2v_vocab, bert = load(args)
+if args.device == -1:
+    device = torch.device("cpu")
+else:
+    device = torch.device(f"cuda:{args.device}" if torch.cuda.is_available() else "cpu")
 
 def split_sentence(sentence:str):
 	sentence_list = mecab_wakati.parse(sentence).rstrip('\n').split()
@@ -64,19 +68,17 @@ def split_sentence(sentence:str):
 			select_list[i] = 0
 	return json.dumps([sentence_list, select_list], ensure_ascii=False)
 
+
 # sentence 中の target を簡単な単語に書き換えて、その単語を返す
 def simplification_sentence(sentence:str, target:str):
-	device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
-	results = list()
-	sentence = morphological_analysis(sentence, mecab)
-
-	candidates, scores = pick_candidates(target, args.most_similar, word2vec, w2v_vocab, word2synonym, args.candidate, args.cos_threshold, bert, sentence, device)
-	candidates = pick_simple_before_ranking(target, candidates, word2freq, freq_total, word2level, simple_synonym, args.simplicity)
-	candidatelist = ranking(target, candidates, sentence, word2vec, w2v_vocab, word2freq, freq_total, language_model, ('',''), mecab, word2synonym, args.ranking, scores)
-	candidatelist = pick_simple(candidatelist, args.simplicity, target, word2level, word2freq, freq_total, simple_synonym)
-	rst = ",".join([" ".join([c[1] for c in rank]) for rank in candidatelist])
-
-	return rst.replace(',', ' ').split(' ')[0]
+    sentence = morphological_analysis(sentence, mecab)
+    candidates, scores = pick_candidates(target, args.most_similar, word2vec, w2v_vocab, word2synonym, args.candidate, args.cos_threshold, bert, sentence, device)
+    candidates = pick_simple_before_ranking(target, candidates, word2freq, freq_total, word2level, simple_synonym, args.simplicity)
+    candidatelist = ranking(target, candidates, sentence, word2vec, w2v_vocab, word2freq, freq_total, language_model, ('',''), mecab, word2synonym, args.ranking, scores)
+    candidatelist = pick_simple(candidatelist, args.simplicity, target, word2level, word2freq, freq_total, simple_synonym)
+    rst = ",".join([" ".join([c[1] for c in rank]) for rank in candidatelist])
+    
+    return rst.replace(',', ' ').split(' ')[0]
 
 # =======================================================
 #   Interface
