@@ -12,9 +12,9 @@ sys.path.append(f"{current_dir}/Japanese")
 #   Functions for English version
 # =======================================================
 
-from run_bert import BERT_LS
+#from run_bert import BERT_LS
 
-bert = BERT_LS()
+#bert = BERT_LS()
 
 def bert_ls(input_str) -> str:
     output_str = bert.simplify(input_str)
@@ -105,8 +105,8 @@ def Ajax_form(request):
     try:
         if p.fullmatch(input_str): # 入力が英語の場合
             detected_language = "English"
-            #output_str = input_str # 開発用
-            output_str = bert_ls(input_str)
+            output_str = input_str # 開発用
+            #output_str = bert_ls(input_str)
         else: #入力が日本語の場合
             detected_language = "日本語"
             output_str = input_str
