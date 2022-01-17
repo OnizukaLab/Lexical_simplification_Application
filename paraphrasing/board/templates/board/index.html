@@ -238,6 +238,7 @@ function process(){
         $('#loading').css('display', 'inline');
         if ($('#id_input_str').val().length == 0){
             $('#id_output_str').empty();
+            flg=true;
         }else{
             $.ajax({
                 'url': '{% url "ajax_form" %}',
