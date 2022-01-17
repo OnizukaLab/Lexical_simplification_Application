@@ -796,7 +796,7 @@ class BERT_LS:
         print("Time Taken: ", end-start)
         print("----------------------------------------")
 
-    def simplify(self, user_input,):
+    def simplify(self, user_input):
         contexts = self._create_context_mapping(user_input)
         uncached_sentences = self._find_uncached_sentences(contexts)
         output = ""
