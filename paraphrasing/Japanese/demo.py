@@ -96,7 +96,7 @@ def word_to_bertsynonym(device, bert, target, sentence, topk):
 	line = sentence.split(target)
 	input_string = sentence + tokenizer.sep_token + line[0] + tokenizer.mask_token + ''.join(line[1:])
 	input_ids = tokenizer.encode(input_string, return_tensors='pt')
-	if device != -1:
+	if device.type != "cpu":
 		cuda = 'cuda:' + str(device)
 		input_ids = input_ids.to(cuda)
 		model.to(cuda)
@@ -195,11 +195,11 @@ def ranking(target, candidates, sentence, word2vec, w2v_vocab, word2freq, freq_t
 		return result
 
 	ranktable = list()
-	if ranking_type in {'glavas', 'ours'}:
+	if ranking_type in {'bert','glavas', 'ours'}:
 		ranktable.append( make_ranking([word2vec.similarity(target, c) for c in candidates]) )
-		ranktable.append( make_ranking([context_sim(sentence, c) for c in candidates]) )
+		#ranktable.append( make_ranking([context_sim(sentence, c) for c in candidates]) )
 		ranktable.append( make_ranking([information_contents(word2freq, freq_total, target) - information_contents(word2freq, freq_total, c) for c in candidates]) )
-	if ranking_type in {'language-model', 'glavas', 'ours'}:
+	if ranking_type in {'bert','language-model', 'glavas', 'ours'}:
 		ranktable.append( make_ranking([language_model_score(sentence, target, c, attached_words) for c in candidates]) )
 		pass
 	if ranking_type in {'bert'}:

@@ -2,6 +2,7 @@ from django.shortcuts import render
 from django.http import JsonResponse
 import sys
 import os
+import torch
 
 # パスを通す
 current_dir=os.getcwd()
@@ -65,11 +66,11 @@ def split_sentence(sentence:str):
 
 # sentence 中の target を簡単な単語に書き換えて、その単語を返す
 def simplification_sentence(sentence:str, target:str):
-
+	device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
 	results = list()
 	sentence = morphological_analysis(sentence, mecab)
 
-	candidates, scores = pick_candidates(target, args.most_similar, word2vec, w2v_vocab, word2synonym, args.candidate, args.cos_threshold, bert, sentence, args.device)
+	candidates, scores = pick_candidates(target, args.most_similar, word2vec, w2v_vocab, word2synonym, args.candidate, args.cos_threshold, bert, sentence, device)
 	candidates = pick_simple_before_ranking(target, candidates, word2freq, freq_total, word2level, simple_synonym, args.simplicity)
 	candidatelist = ranking(target, candidates, sentence, word2vec, w2v_vocab, word2freq, freq_total, language_model, ('',''), mecab, word2synonym, args.ranking, scores)
 	candidatelist = pick_simple(candidatelist, args.simplicity, target, word2level, word2freq, freq_total, simple_synonym)
@@ -104,7 +105,7 @@ def Ajax_form(request):
             detected_language = "English"
             #output_str = input_str # 開発用
             output_str = bert_ls(input_str)
-        else: # 入力が日本語の場合
+        else: #入力が日本語の場合
             detected_language = "日本語"
             output_str = input_str
             splited = split_sentence(input_str)
