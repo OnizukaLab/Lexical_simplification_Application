@@ -28,9 +28,9 @@ import MeCab
 import kenlm
 class Args:
     def __init__(self):
-        self.candidate          = 'bert' # bert or glavas or glavas+synonym or synonymで動作
+        self.candidate          = 'glavas+synonym' # bert or glavas or glavas+synonym or synonymで動作
         self.simplicity         = 'point-wise'
-        self.ranking            = 'bert' # bert or glavasで動作
+        self.ranking            = 'glavas' # bert or glavasで動作
         self.most_similar       = 10
         self.cos_threshold      = 0.0
         self.embedding          = "Japanese/embeddings/glove.txt"
@@ -70,7 +70,7 @@ def split_sentence(sentence:str):
 
 
 # sentence 中の target を簡単な単語に書き換えて、その単語を返す
-def simplification_sentence(sentence:str, target:str):
+def simplification_sentence(sentence:str, target:str) -> str:
     sentence = morphological_analysis(sentence, mecab)
     candidates, scores = pick_candidates(target, args.most_similar, word2vec, w2v_vocab, word2synonym, args.candidate, args.cos_threshold, bert, sentence, device)
     candidates = pick_simple_before_ranking(target, candidates, word2freq, freq_total, word2level, simple_synonym, args.simplicity)

@@ -25,7 +25,8 @@ def load(args):
 	mecab_wakati = MeCab.Tagger('-Owakati')
 	mecab = MeCab.Tagger('-Ochasen')
 	word2level = load_word2level(args.word_to_complexity)
-	word2synonym = load_synonym(args.synonym_dict, word2level)
+	#word2synonym = load_synonym(args.synonym_dict, word2level)
+	word2synonym = load_word2synonym(args.synonym_dict, word2level)
 	word2freq = load_freqs(args.word_to_freq, 'none')
 	word2freq = word2freq[0] if word2freq else None
 	freq_total = sum(word2freq.values()) if word2freq else 0
@@ -116,8 +117,8 @@ def pick_candidates(target, most_similar, word2vec, w2v_vocab, word2synonym, can
 	bert_score = list()
 	if candidate_type == 'glavas' or candidate_type == 'glavas+synonym':
 		candidates += [c for c,_ in word2vec.most_similar(target, topn=most_similar)]
-	if candidate_type == 'synonym' or candidate_type == 'glavas+synonym':
-		candidates += [c for c,_ in word2synonym[target] if c in w2v_vocab]
+	if candidate_type == 'synonym' or candidate_type == 'glavas+synonym' or candidate_type == 'bert':
+		candidates += [c for c,_ in word2synonym[target] if (c in w2v_vocab and target in word2synonym)]
 	if candidate_type in {'bert', 'all'}:
 		for c,v in zip(*word_to_bertsynonym(device, bert, target, sentence, most_similar)):
 			if c in w2v_vocab:
@@ -196,17 +197,15 @@ def ranking(target, candidates, sentence, word2vec, w2v_vocab, word2freq, freq_t
 		return result
 
 	ranktable = list()
-	if ranking_type in {'bert','glavas', 'ours'}:
+	if ranking_type in ['bert','glavas', 'ours']:
 		ranktable.append( make_ranking([word2vec.similarity(target, c) for c in candidates]) ) # word2vecで類似度を測る
 		#ranktable.append( make_ranking([context_sim(sentence, c) for c in candidates]) )
 		ranktable.append( make_ranking([information_contents(word2freq, freq_total, target) - information_contents(word2freq, freq_total, c) for c in candidates]) ) # wiki内の頻度で簡単さを測る
-	if ranking_type in {'bert','language-model', 'glavas', 'ours'}:
+	if ranking_type in ['bert','language-model', 'glavas', 'ours']:
 		ranktable.append( make_ranking([language_model_score(sentence, target, c, attached_words) for c in candidates]) ) # KenLMで流暢度を測る
-		pass
-	if ranking_type in {'bert'}:
+	if ranking_type in ['bert']:
 		ranktable.append( make_ranking(scores['bert']) ) # 文章のおかしくない率(BERTでのその単語の出やすさ)
-
-	if ranking_type in {'ours'}:
+	if ranking_type in ['ours']:
 		ranktable.append( make_ranking([get_p_score(word2synonym, target, c) for c in candidates]) )
 
 

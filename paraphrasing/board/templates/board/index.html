@@ -154,9 +154,17 @@ var word_selected = function() {
             }
         })
         .done( (data) => {
-            console.log(data.output_str);
-            replace_words[idx] = data.output_str;
-            update_output()
+            if (response.detected_language=="English"){
+                $('#word_selection').css('display', 'none');
+                $('#id_output_str').empty();
+                $('#id_output_str').append(response.output_str);
+                $('#split-result').empty();
+            }else{
+                console.log(data.output_str);
+                replace_words[idx] = data.output_str;
+                update_output()
+            }
+
         })
         .fail( (data) => { console.log(data); } );
     }
@@ -228,42 +236,46 @@ function process(){
         backup_string = $('#id_input_str').val();
         flg=false;
         $('#loading').css('display', 'inline');
-        $.ajax({
-            'url': '{% url "ajax_form" %}',
-            'type': 'POST',
-            'data': {
-                'input_str': $('#id_input_str').val(),
-            },
-            'dataType': 'json'
-        }).done(response => {
-            $('#detected_language').empty();
-            $('#detected_language').append(response.detected_language);
-            if (response.detected_language=="English"){
-                $('#word_selection').css('display', 'none');
-                $('#id_output_str').empty();
-                $('#id_output_str').append(response.output_str);
-                $('#split-result').empty();
-            }else{
-                $('#word_selection').css('display', 'inline');
-                $('#id_output_str').empty();
-                $('#id_output_str').append(response.output_str);
-                console.log(response.splited);
-                [original_split, button_list] = JSON.parse(response.splited);
-                length = original_split.length;
-                checked_list = Array(length).fill(0);
-                replace_words = Array(length).fill('');
-                $('#split-result').html('');
-                for(let i = 0; i < length; i++){
-                    if (button_list[i]==1){
-                        $('#split-result').append('<button class="word-piece" data="' + i + '">' + original_split[i] + '</button> ');
+        if ($('#id_input_str').val().length == 0){
+            $('#id_output_str').empty();
+        }else{
+            $.ajax({
+                'url': '{% url "ajax_form" %}',
+                'type': 'POST',
+                'data': {
+                    'input_str': $('#id_input_str').val(),
+                },
+                'dataType': 'json'
+            }).done(response => {
+                $('#detected_language').empty();
+                $('#detected_language').append(response.detected_language);
+                if (response.detected_language=="English"){
+                    $('#word_selection').css('display', 'none');
+                    $('#id_output_str').empty();
+                    $('#id_output_str').append(response.output_str);
+                    $('#split-result').empty();
+                }else{
+                    $('#word_selection').css('display', 'inline');
+                    $('#id_output_str').empty();
+                    $('#id_output_str').append(response.output_str);
+                    console.log(response.splited);
+                    [original_split, button_list] = JSON.parse(response.splited);
+                    length = original_split.length;
+                    checked_list = Array(length).fill(0);
+                    replace_words = Array(length).fill('');
+                    $('#split-result').html('');
+                    for(let i = 0; i < length; i++){
+                        if (button_list[i]==1){
+                            $('#split-result').append('<button class="word-piece" data="' + i + '">' + original_split[i] + '</button> ');
+                        }
                     }
+                    $('.word-piece').click(word_selected);
                 }
-                $('.word-piece').click(word_selected);
-            }
-            flg=true;
-            $('#loading').css('display', 'none');
-        });
-        //flg=true;
+                flg=true;
+                $('#loading').css('display', 'none');
+            });
+            //flg=true;
+        }
         
     }
 }
