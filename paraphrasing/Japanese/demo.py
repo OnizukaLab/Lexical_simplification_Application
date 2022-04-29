@@ -9,8 +9,8 @@ import torch
 from word_complexity import load_word2vec, load_freqs
 from simple_synonym import load_word2level, load_synonym
 from collections import defaultdict
-from transformers.tokenization_bert_japanese import BertJapaneseTokenizer
-from transformers.modeling_bert import BertForMaskedLM
+from transformers import BertJapaneseTokenizer
+from transformers import BertForMaskedLM
 
 from pprint import pprint
 

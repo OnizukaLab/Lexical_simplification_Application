@@ -30,6 +30,19 @@ BERT-LSを使うために、以下の3つのファイルをダウンロードし
 
 * [gpu_attention_model](https://github.com/siangooding/lexical_simplification/blob/master/gpu_attention.model)
 
+BERT-LSがpytorchを使うので、CUDAバージョンと合わせるpytorchをインストールするのも必要。
+
+日本語版を使うために、下の指示に従う。
+
+* [pretrained_embedding](https://github.com/yagays/pretrained_embedding)でJapanese Wikipedia Entity Vectorsを作る
+
+* 作ったentity_vector.model.txtの名をglove.txtにする
+
+* glove.txtを`paraphrasing/Japanese/embeddings`に置く。
+
+* wiki.arpa.binというファイル作るため、[このレポ](https://github.com/yagays/pretrained_embedding)でwiki.arpa.binを探索し、指示に従う。git s
+
+* wiki.arpa.binを`paraphrasing/Japanese/data`に置く。
 
 ## ディレクトリ構成
 
@@ -44,6 +57,20 @@ Paraphrasing2021/
 ┃ ┃ ┣ **ppdb-2.0-tldr**
 
 ┃ ┃ ┣ **gpu_attention.model**
+
+┃ ┃ ┗ other files
+
+┃ ┣ Japanese/
+
+┃ ┃ ┣ data
+
+┃ ┃ ┃ ┣ **wiki.arpa.bin**
+
+┃ ┃ ┃ ┗ other files
+
+┃ ┃ ┣ embeddings
+
+┃ ┃ ┃ ┣ **glove.txt**
 
 ┃ ┃ ┗ other files
 
@@ -159,6 +186,10 @@ Requirementで列挙したライブラリなどのインストール方法
  
 ```
 pip install -r requirements.txt
+```
+
+```
+pip install https://github.com/kpu/kenlm/archive/master.zip
 ```
  
 ## システムの起動
